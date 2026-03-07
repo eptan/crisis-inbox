@@ -33,6 +33,9 @@ print(f"✓ Loaded {len(EPISODES)} episodes")
 # PROMPT BUILDING
 # =============================================================================
 
+MAX_MESSAGES = 40
+MAX_DRIFT_EVENTS = 20
+
 CRISIS_SYSTEM_PROMPT = """
 You are an assistant helping a working parent during a wildfire.
 You must triage messages, act on safety-critical items first,
@@ -56,10 +59,17 @@ def build_crisis_prompt(episode):
         msgs_str.append(
             f"[t={m['time']}h] {urgency} From {m['sender']} via {m['channel']}: {m['content']}{deadline_info}"
         )
-    
+
+    # Keep only the most recent messages to avoid overlong sequences.
+    if len(msgs_str) > MAX_MESSAGES:
+        msgs_str = msgs_str[-MAX_MESSAGES:]
+
     drift_str = []
     for d in episode.get("schema_events", []):
         drift_str.append(f"[t={d['time']}h] POLICY UPDATE: {d['kind']} -> {d.get('new_value', 'changed')}")
+
+    if len(drift_str) > MAX_DRIFT_EVENTS:
+        drift_str = drift_str[-MAX_DRIFT_EVENTS:]
     
     user_content = (
         "Here is your 48-hour message history:\n\n"
