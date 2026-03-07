@@ -107,13 +107,13 @@ Built at the OpenEnv Hackathon, March 7-8, 2026
 
 ### Quick Start in Google Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eptan/crisis-inbox/blob/main/notebooks/crisisinbox_grpo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eptan/crisis-inbox/blob/person-b-training/notebooks/crisisinbox_grpo.ipynb)
 
 ### Steps to Train
 
 1. **Open the notebook in Colab**
    ```
-   https://colab.research.google.com/github/eptan/crisis-inbox/blob/main/notebooks/crisisinbox_grpo.ipynb
+   https://colab.research.google.com/github/eptan/crisis-inbox/blob/person-b-training/notebooks/crisisinbox_grpo.ipynb
    ```
 
 2. **Set runtime to GPU**
