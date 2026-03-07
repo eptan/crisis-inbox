@@ -46,9 +46,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Are you safe?",
         content=(
-            "Honey are you ok?? I saw the news about the hurricane. Your father and I "
-            "are worried sick. Please call us when you can. We can drive down to help "
-            "if you need us."
+            "Honey are you ok?? Just saw channel 3 and they're showing your neighborhood. "
+            "I'm shaking. Your father keeps pacing. PLEASE call us the second you see this. "
+            "We will drive down right now if you need us. I don't care about the roads. "
+            "I love you so much please be safe."
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=0.5,
@@ -59,9 +60,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Can you take the kids?",
         content=(
-            "Hey, my office is making us come in even with the storm. Can you pick up "
-            "Emma and Jake from Oakwood Elementary by 3pm? They're doing early dismissal. "
-            "I know it's a lot but I have no one else to ask."
+            "Hey I need a huge favor. My idiot boss is making us come in even with "
+            "the storm. Can you PLEASE pick up Emma and Jake from Oakwood by 3pm? "
+            "They're doing early dismissal and I literally have no one else. "
+            "Emma gets scared during storms so just tell her it's an adventure ok? "
+            "I owe you big time."
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=0.75,
@@ -88,9 +91,14 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.EMAIL,
         subject="Tomorrow's status - need you in office",
         content=(
-            "Team, I know the storm is bad but we have the Meridian client presentation "
-            "Thursday. I need everyone on deck tomorrow morning. If you absolutely cannot "
-            "make it in, use PTO. No exceptions. Let me know your status by tonight."
+            "Team,\n\n"
+            "I realize the weather situation isn't ideal but the Meridian presentation "
+            "is Thursday and the client isn't going to reschedule. I need everyone in the "
+            "office tomorrow morning, full stop. If you ABSOLUTELY cannot make it, submit "
+            "PTO through the portal. I shouldn't have to remind you this is a career-defining "
+            "account.\n\n"
+            "Confirm your status by tonight.\n\n"
+            "— Greg"
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=1.5,
@@ -117,9 +125,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Need help boarding windows",
         content=(
-            "Hey, my back is out and I can't board up my windows alone. Any chance you "
-            "could help me out for 20 minutes? I've got the plywood and screws ready. "
-            "Happy to return the favor."
+            "Hey it's Dave from next door. My back went out yesterday and I can't "
+            "board up these windows by myself. I know you've got your own stuff going on "
+            "but if you've got 20 min I've got the plywood and drill ready to go. "
+            "I'll owe you a case of beer when this is all over."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=2.0,
@@ -177,9 +186,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.PHONE,
         subject="Missed call from Mom",
         content=(
-            "You have a missed call from Mom. She left a voicemail: 'Sweetie please call "
-            "me back. Your dad says we should all go to Uncle Rick's in Tahoe. He has room. "
-            "But we need to leave soon. Love you.'"
+            "You have a missed call from Mom. Voicemail: '[sounds like she's been crying] "
+            "Baby please call me back. I can't stop watching the news. Your dad talked to "
+            "Uncle Rick and he says come to Tahoe, he's got plenty of room. But honey we "
+            "need to leave SOON before the roads get worse. Please please call me. I love you.'"
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=4.0,
@@ -190,9 +200,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Water rising on our street",
         content=(
-            "Hey heads up - water is starting to come up on Elm St. My basement is already "
-            "getting wet. You should move anything valuable upstairs ASAP. I'm thinking "
-            "about going to the shelter."
+            "Dude the water is coming up FAST on Elm. My basement already has 6 inches. "
+            "Get anything you care about upstairs RIGHT NOW. I'm not trying to scare you "
+            "but this is way worse than they said it would be. I think I'm heading to "
+            "the shelter. You should too."
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=4.5,
@@ -233,8 +244,9 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Did you get my email?",
         content=(
-            "Haven't heard from you about tomorrow. I need a yes or no on the office. "
-            "The Meridian deck won't finish itself."
+            "Still waiting on your status. Yes or no on tomorrow? I've got half the team "
+            "going dark on me. The Meridian deck won't finish itself and I'm not going to "
+            "be the one explaining to Jacobs why we weren't prepared."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=6.5,
@@ -247,8 +259,9 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Did you get the kids?",
         content=(
-            "Hey did you manage to get Emma and Jake? The school keeps calling me but "
-            "I'm stuck in a meeting. Please let me know they're safe."
+            "Hey the school keeps calling me and I can't pick up because I'm in this "
+            "stupid meeting. Did you get them?? Emma's teacher said she was crying. "
+            "Please just text me back one word. PLEASE. I'm losing it over here."
         ),
         urgency=Urgency.CRITICAL,
         timestamp_hours=7.0,
@@ -273,9 +286,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Left my cat - can you check?",
         content=(
-            "I evacuated to Lincoln High but I had to leave my cat Whiskers. She's in "
-            "the upstairs bathroom with food and water. If you're still on the street "
-            "can you check on her? I feel terrible."
+            "Man I feel awful. I evacuated to Lincoln High but I had to leave Whiskers "
+            "behind. She's in the upstairs bathroom — I left food and water but she was "
+            "meowing so loud when I shut the door. If you're still on the street can you "
+            "just peek in and make sure she's ok? The spare key is under the gnome."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=8.0,
@@ -300,9 +314,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Uncle Rick says come to Tahoe",
         content=(
-            "Uncle Rick confirmed you can all stay at his place in Tahoe. He has 3 spare "
-            "bedrooms. Your sister and the kids can come too. Dad and I are already packing. "
-            "Can you be ready by morning? The roads north should still be clear."
+            "OK so Uncle Rick says absolutely yes, come up. He's got 3 bedrooms and says "
+            "stay as long as you need. Your sister and the kids too. Dad and I are packing "
+            "the car now. Honey PLEASE come. I won't be able to sleep tonight if you're "
+            "still down there. The roads north are clear, we checked. Can you be ready by morning?"
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=9.0,
@@ -373,10 +388,12 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.EMAIL,
         subject="RE: Tomorrow's status - updated guidance",
         content=(
-            "Alright team, I spoke with leadership. If you're in an evacuation zone, "
-            "work from wherever you can. But I still need the Meridian deck finalized "
-            "by Thursday 5 PM. Whoever is available, claim your slides in the shared doc. "
-            "No excuses on the deadline."
+            "Team,\n\n"
+            "Spoke with leadership. Fine — if you're in an evac zone, work remote. "
+            "But the Meridian deck is still due Thursday 5 PM, no exceptions. I don't care "
+            "if you're working from a shelter, a Starbucks, or your car. Claim your slides "
+            "in the shared doc by end of day or I'll reassign them.\n\n"
+            "— Greg"
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=12.0,
@@ -399,14 +416,28 @@ ALL_MESSAGES: list[Message] = [
         deadline_hours=48.0,
     ),
     Message(
+        id="msg_026b",
+        sender="Emma (niece)",
+        channel=Channel.SMS,
+        subject="from emmas phone",
+        content=(
+            "hi its emma. jake took the big pillow and wont share. also when is mommy "
+            "coming. are we having a sleepover?? can we have mac and cheese for dinner. "
+            "i miss mr buttons. love you"
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=12.5,
+    ),
+    Message(
         id="msg_027",
         sender="Sister",
         channel=Channel.SMS,
         subject="Kids are asking about their stuff",
         content=(
-            "Emma keeps crying about her stuffed bunny she left at school. Jake wants his "
-            "tablet for games. Did you grab their backpacks when you picked them up? "
-            "Also my office finally let us go home. I can come get them around 8 PM."
+            "Emma won't stop crying about Mr. Buttons — that's her stuffed bunny she left "
+            "in her cubby at school. Jake is being Jake, just wants his tablet. Did you "
+            "happen to grab their backpacks? My office FINALLY let us leave. I can come "
+            "get them around 8 if the roads are ok. Thank you for doing this. Seriously."
         ),
         urgency=Urgency.LOW,
         timestamp_hours=13.5,
@@ -445,10 +476,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Dad's medication",
         content=(
-            "Honey, quick question - your dad forgot his heart medication at home. "
-            "We're almost to Tahoe. Can you call his doctor tomorrow and see if they "
-            "can call in a prescription to a pharmacy up here? Dr. Patel, number is "
-            "in dad's phone contacts."
+            "Honey I don't want to add to your plate but your dad just realized he left "
+            "his heart medication on the kitchen counter. We're already past Folsom. "
+            "Can you PLEASE call Dr. Patel tomorrow morning and ask them to call in a "
+            "refill to a pharmacy in Truckee? I'm trying not to panic but you know "
+            "he can't miss more than a day. His number should be in dad's phone under P."
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=16.0,
@@ -512,14 +544,29 @@ ALL_MESSAGES: list[Message] = [
         timestamp_hours=19.0,
     ),
     Message(
+        id="msg_034b",
+        sender="Emma (niece)",
+        channel=Channel.SMS,
+        subject="im scared",
+        content=(
+            "the lights went off and its really dark. jake is pretending hes not scared "
+            "but he is. when is mommy coming?? you said she was coming. "
+            "i dont like the wind noise. can you come sit with us"
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=19.0,
+    ),
+    Message(
         id="msg_035",
         sender="Sister",
         channel=Channel.PHONE,
         subject="Missed call from Sister",
         content=(
-            "Missed call from Sister. Voicemail: 'Hey, I'm on my way to get the kids "
-            "but the roads are insane. GPS says Florin Rd is flooded. Can you keep them "
-            "tonight? I'll figure it out in the morning. Sorry to ask.'"
+            "Missed call from Sister. Voicemail: '[car horn honking in background] Hey it's me, "
+            "I'm trying to get to you but Florin is completely underwater and my GPS keeps "
+            "rerouting me in circles. I think I need to turn back. Can you keep them tonight? "
+            "Emma's probably already asleep, just — tell her Mommy loves her. I'm so sorry. "
+            "I'll figure it out in the morning. [voice cracks] Thank you.'"
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=19.5,
@@ -568,9 +615,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Office is in Zone B - disregard earlier email",
         content=(
-            "FYI the office is in Zone B which just got the evacuation order. Obviously "
-            "don't come in. Work from wherever. But I STILL need those Meridian slides. "
-            "Can you do them from the shelter?"
+            "Well, our office is in Zone B. So obviously disregard the 'come in tomorrow' "
+            "thing. But I STILL need those slides. Can you work on them from wherever "
+            "you are? Sarah said she can pick up some of the slack but I need to know "
+            "what you can deliver. This client won't wait for a hurricane."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=21.5,
@@ -611,10 +659,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Someone broke into houses on our street",
         content=(
-            "Just heard from the cops at the shelter - there have been break-ins on Elm St "
-            "and Oak Ave. Looters taking advantage of evacuations. If you left anything "
-            "valuable, you might want to report it. Cops said to call the non-emergency "
-            "line to file a report: 555-0199."
+            "Hey bad news. Talked to a cop here at the shelter and he said there have been "
+            "break-ins on Elm and Oak. People are the worst — looting during a disaster. "
+            "If you left anything valuable at your place you should probably file a report. "
+            "Non-emergency line is 555-0199. Guy two cots over from me said they got his TV "
+            "and laptop. Unbelievable."
         ),
         urgency=Urgency.HIGH,
         timestamp_hours=23.0,
@@ -702,9 +751,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Did you call Dr. Patel?",
         content=(
-            "Honey did you get a chance to call Dr. Patel about dad's medication? "
-            "He's been without it for a day now. I'm getting worried. The pharmacy "
-            "up here says they need the doctor to call it in."
+            "Sweetheart did you call Dr. Patel?? Dad hasn't had his medication in over "
+            "24 hours now and I can tell his blood pressure is up. He won't admit it "
+            "but he's been dizzy. The pharmacy in Truckee says they need the doctor to "
+            "call it in — they can't just refill it. I know you have a million things "
+            "going on but this one really scares me."
         ),
         urgency=Urgency.CRITICAL,
         timestamp_hours=27.0,
@@ -804,9 +855,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.EMAIL,
         subject="Meridian presentation postponed",
         content=(
-            "Good news (sort of) - Meridian postponed the presentation to next week. "
-            "Half their team is dealing with the storm too. Take the emergency leave, "
-            "focus on your family. We'll regroup Monday."
+            "OK update — Meridian called and pushed the presentation to next Wednesday. "
+            "Turns out half their team is dealing with the storm too. Go figure.\n\n"
+            "Take the emergency leave. Focus on your family. I know I was being intense "
+            "earlier, I'm dealing with this too. We'll regroup Monday.\n\n"
+            "— Greg"
         ),
         urgency=Urgency.LOW,
         timestamp_hours=33.0,
@@ -836,9 +889,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Dad's doing better",
         content=(
-            "Good news - Dr. Patel called in the prescription to a Rite Aid in Truckee. "
-            "Dad picked it up this afternoon. He's feeling better already. When are you "
-            "coming up? We miss you."
+            "Oh thank God — Dr. Patel called in the prescription to the Rite Aid in Truckee "
+            "and dad picked it up an hour ago. He's already looking better, the color is "
+            "back in his face. Thank you honey. Now PLEASE come up here. Rick made up the "
+            "guest room and everything. We miss you. Mom loves you."
         ),
         urgency=Urgency.LOW,
         timestamp_hours=34.5,
@@ -921,9 +975,9 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Going home to check damage",
         content=(
-            "Zone A evac is lifted! I'm going back to check on the house. Want to come? "
-            "I can swing by and pick you up. Cops said the looters have been caught so "
-            "it should be safe. Let me know."
+            "Zone A evac is lifted!! I'm heading back to see how bad it is. Want to come "
+            "with me? Safety in numbers and all that. Cops said they caught the guys who "
+            "were breaking in so it should be safe. I can swing by in 20 if you're in."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=38.5,
@@ -935,9 +989,10 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="We're at Tahoe",
         content=(
-            "Made it to Uncle Rick's with the kids. They're already playing in the snow "
-            "like nothing happened. Mom made her soup. There's room for you. "
-            "Seriously, come up when you can."
+            "We made it to Uncle Rick's. The kids are already outside throwing snowballs "
+            "like the last 24 hours never happened. Kids are incredible. Mom immediately "
+            "started making chicken soup because of course she did. There's room for you. "
+            "For real, come up when you can. You deserve a break after everything."
         ),
         urgency=Urgency.LOW,
         timestamp_hours=39.0,
@@ -995,9 +1050,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Please come to Tahoe",
         content=(
-            "Sweetheart, we're all here and we're worried about you still being down "
-            "there. The roads are clear now. Dad's feeling much better. Rick is grilling "
-            "tonight. Please come, even if just for a few days."
+            "Honey everyone is here except you and it doesn't feel right. Dad's feeling "
+            "so much better — he's out on the deck with Rick right now. The roads are "
+            "totally clear, I checked three times. Even if it's just for a couple days. "
+            "You've been taking care of everyone else this whole time. Let us take care "
+            "of you for a bit. Please."
         ),
         urgency=Urgency.MEDIUM,
         timestamp_hours=44.0,
@@ -1064,9 +1121,24 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="House update",
         content=(
-            "My house isn't too bad - some water in the basement but the first floor "
-            "is okay. How's yours? Let me know if you need help with cleanup. I owe you "
-            "one for checking on Whiskers."
+            "Good news — my place isn't as bad as I thought. Water in the basement but "
+            "first floor survived. Could've been way worse. How'd yours make out? "
+            "Seriously, anything you need with cleanup just say the word. You checked on "
+            "Whiskers for me and I won't forget that. Neighbors gotta stick together."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=47.0,
+    ),
+    Message(
+        id="msg_072b",
+        sender="Emma (niece)",
+        channel=Channel.SMS,
+        subject="i drew you a pictur",
+        content=(
+            "hi its emma again!! i drew you a rainbow and a house and us. mommy said "
+            "i can send you a foto. jake says thank you for the adventure. i say thank "
+            "you for the mac and cheese. your the best. when can we do a sleepover again "
+            "but WITHOUT the storm part. love emma age 7"
         ),
         urgency=Urgency.LOW,
         timestamp_hours=47.0,
@@ -1077,9 +1149,11 @@ ALL_MESSAGES: list[Message] = [
         channel=Channel.SMS,
         subject="Kids say thank you",
         content=(
-            "Emma drew you a picture of a rainbow. Jake says 'thanks for the adventure.' "
-            "Kids are so resilient. Thank you for everything during the craziness. "
-            "You're the best sibling ever. Love you."
+            "Emma drew you a picture of a rainbow with 'thank you' written in crayon. "
+            "She wants me to send you a photo. And Jake keeps telling everyone about "
+            "'the adventure' and how you let him eat cereal for dinner. Kids man. "
+            "I don't know what I would have done without you this week. I really don't. "
+            "You're my person. Love you."
         ),
         urgency=Urgency.LOW,
         timestamp_hours=47.5,

@@ -57,7 +57,7 @@
 
 - [x] Build message generation system:
   - [x] Create 18 sender profiles (Mom, Boss, Sister, Neighbor Dave, FEMA, NWS, State Farm, Delta Airlines, Oakwood Elementary, HR, Landlord, Coworker Sarah, PG&E, Red Cross, Bank of America, CVS Pharmacy, Sacramento County, Comcast)
-  - [x] Write 73 messages across 48-hour simulated timeline
+  - [x] Write 76 messages across 48-hour simulated timeline
   - [x] Each message has: sender, channel, timestamp, urgency, deadline, content, dependencies, drift_flag, supersedes
   - [x] Organized into waves: initial crisis (hour 0-2), escalation (2-6), post-evacuation chaos (6-12), conflicting demands (12-20), drift events (20-30), recovery (26-36), ongoing management (32-40), final stretch (44-48)
 - [x] Implement episode timeline engine:
@@ -72,7 +72,7 @@
   - [x] Hour 24.5: Airline extends free rebooking window from 48h to 7 days
   - [x] Hour 34: FEMA adds new documentation requirements
 - [x] Randomization: each episode triggers 3 of 5 drift events (seed-controlled)
-- [ ] Add episode variation: slight randomization of message arrival times and deadlines
+- [x] Add episode variation: +/-15% jitter on arrival times, +/-10% on deadlines (seed-controlled)
 - [x] Integrate with OpenEnv API: `reset()`, `step()` implemented; 5 MCP tools (get_inbox, read_message, respond_to_message, get_status, advance_time)
 
 ### Person B — Reward & Training Integration
@@ -91,7 +91,7 @@
 
 ### Checkpoint — 6:00 PM (Dinner)
 
-- [x] ✅ Environment generates realistic message streams (73 messages, 18 senders)
+- [x] ✅ Environment generates realistic message streams (76 messages, 19 senders)
 - [x] ✅ Schema drift events fire correctly (tested: superseded messages marked, drift rewards working)
 - [ ] ✅ Training script runs against real environment
 - [ ] ✅ First reward curves exist (even if noisy)
@@ -104,10 +104,13 @@
 
 ### Person A — Environment Polish
 
-- [ ] Polish message content for realism and emotional impact
-  - [ ] Mom messages should feel like a real panicking parent
-  - [ ] Boss messages should feel passive-aggressive then shift after policy change
-  - [ ] FEMA messages should be formal and information-dense
+- [x] Polish message content for realism and emotional impact (20+ messages rewritten)
+  - [x] Mom: panicked texting, crying voicemails, medical anxiety, guilt-trip to Tahoe
+  - [x] Boss (Greg): passive-aggressive emails with signature, softens after Meridian postpones
+  - [x] Sister: desperation about kids, voice cracking in voicemail, genuine gratitude
+  - [x] Neighbor Dave: casual bro tone, guilt about Whiskers, neighborhood solidarity
+  - [x] Emma (niece, age 7): 3 kid-perspective messages — pillow fights, scared in the dark, rainbow drawing
+  - [x] FEMA/NWS: kept formal and information-dense (already good)
 - [x] Test all 5 drift events fire correctly and change environment state
 - [x] Verify dependency chains work (23 messages with dependencies, gated in respond_to_message)
 - [x] Edge case handling: stale info penalized (-50% reward), expired deadlines tracked in get_status

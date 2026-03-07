@@ -86,9 +86,10 @@ DRIFT_EVACUATION_EXPANSION = DriftEvent(
             channel=Channel.SMS,
             subject="Office is in Zone B - disregard earlier email",
             content=(
-                "FYI the office is in Zone B which just got the evacuation order. Obviously "
-                "don't come in. Work from wherever. But I STILL need those Meridian slides. "
-                "Can you do them from the shelter?"
+                "Well, our office is in Zone B. So obviously disregard the 'come in tomorrow' "
+                "thing. But I STILL need those slides. Can you work on them from wherever "
+                "you are? Sarah said she can pick up some of the slack but I need to know "
+                "what you can deliver. This client won't wait for a hurricane."
             ),
             urgency=Urgency.MEDIUM,
             timestamp_hours=21.5,

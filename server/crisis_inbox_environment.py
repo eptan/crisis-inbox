@@ -293,7 +293,19 @@ class CrisisInboxEnvironment(MCPEnvironment):
         for msg in ALL_MESSAGES:
             if msg.id in all_drift_ids and msg.id not in drift_msg_ids:
                 continue  # Skip drift messages from events not selected this episode
-            self._all_messages.append(msg.model_copy())
+            m = msg.model_copy()
+            # Add jitter to arrival times and deadlines for episode variation
+            # Keep hour-0 messages at 0, jitter others by +/- 15% (clamped to 0-48)
+            if m.timestamp_hours > 0:
+                jitter = self._rng.uniform(-0.15, 0.15) * m.timestamp_hours
+                m.timestamp_hours = max(0.1, min(47.5, m.timestamp_hours + jitter))
+            if m.deadline_hours is not None and m.deadline_hours > 0:
+                d_jitter = self._rng.uniform(-0.1, 0.1) * m.deadline_hours
+                m.deadline_hours = max(
+                    m.timestamp_hours + 0.5,
+                    min(72.0, m.deadline_hours + d_jitter),
+                )
+            self._all_messages.append(m)
 
         self._visible_messages = []
         self._handled = {}
