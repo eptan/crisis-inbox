@@ -1,0 +1,432 @@
+[
+  {
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "National Weather Service",
+        "channel": "government_alert",
+        "content": "Mandatory Evacuation Order - Zone A",
+        "time": 0.0,
+        "type": "safety",
+        "deadline": 6.0
+      },
+      {
+        "id": "msg_002",
+        "sender": "Mom",
+        "channel": "sms",
+        "content": "Are you safe?",
+        "time": 0.5,
+        "type": "admin"
+      },
+      {
+        "id": "msg_003",
+        "sender": "State Farm Insurance",
+        "channel": "email",
+        "content": "Important: File your claim within 72 hours",
+        "time": 1.0,
+        "type": "admin",
+        "deadline": 73.0
+      },
+      {
+        "id": "msg_004",
+        "sender": "HR Department",
+        "channel": "email",
+        "content": "Remote work policy during emergency",
+        "time": 2.0,
+        "type": "work",
+        "deadline": 26.0
+      },
+      {
+        "id": "msg_005",
+        "sender": "Delta Airlines",
+        "channel": "app_notification",
+        "content": "Flight DL1847 Cancelled",
+        "time": 3.0,
+        "type": "work",
+        "deadline": 51.0
+      }
+    ],
+    "critical_ids": [
+      "msg_001",
+      "msg_002",
+      "msg_003"
+    ],
+    "deadlines": {
+      "task_msg_001": 6.0,
+      "task_msg_003": 73.0,
+      "task_msg_004": 26.0,
+      "task_msg_005": 51.0
+    },
+    "tasks": {
+      "task_msg_001": {
+        "category": "safety",
+        "sender": "National Weather Service"
+      },
+      "task_msg_003": {
+        "category": "admin",
+        "sender": "State Farm Insurance"
+      },
+      "task_msg_004": {
+        "category": "work",
+        "sender": "HR Department"
+      },
+      "task_msg_005": {
+        "category": "work",
+        "sender": "Delta Airlines"
+      }
+    },
+    "schema_events": [],
+    "ideal_tone_map": {
+      "National Weather Service": "casual",
+      "Mom": "warm",
+      "State Farm Insurance": "casual",
+      "HR Department": "casual",
+      "Delta Airlines": "casual"
+    },
+    "episode_id": "ep_000"
+  },
+  {
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "National Weather Service",
+        "channel": "government_alert",
+        "content": "Mandatory Evacuation Order - Zone A",
+        "time": 0.0,
+        "type": "safety",
+        "deadline": 6.0
+      },
+      {
+        "id": "msg_002",
+        "sender": "Mom",
+        "channel": "sms",
+        "content": "Are you safe?",
+        "time": 0.5,
+        "type": "admin"
+      },
+      {
+        "id": "msg_003",
+        "sender": "State Farm Insurance",
+        "channel": "email",
+        "content": "Important: File your claim within 72 hours",
+        "time": 1.0,
+        "type": "admin",
+        "deadline": 73.0
+      },
+      {
+        "id": "msg_004",
+        "sender": "HR Department",
+        "channel": "email",
+        "content": "Remote work policy during emergency",
+        "time": 2.0,
+        "type": "work",
+        "deadline": 26.0
+      },
+      {
+        "id": "msg_005",
+        "sender": "Delta Airlines",
+        "channel": "app_notification",
+        "content": "Flight DL1847 Cancelled",
+        "time": 3.0,
+        "type": "work",
+        "deadline": 51.0
+      }
+    ],
+    "critical_ids": [
+      "msg_001",
+      "msg_002",
+      "msg_003"
+    ],
+    "deadlines": {
+      "task_msg_001": 6.0,
+      "task_msg_003": 73.0,
+      "task_msg_004": 26.0,
+      "task_msg_005": 51.0
+    },
+    "tasks": {
+      "task_msg_001": {
+        "category": "safety",
+        "sender": "National Weather Service"
+      },
+      "task_msg_003": {
+        "category": "admin",
+        "sender": "State Farm Insurance"
+      },
+      "task_msg_004": {
+        "category": "work",
+        "sender": "HR Department"
+      },
+      "task_msg_005": {
+        "category": "work",
+        "sender": "Delta Airlines"
+      }
+    },
+    "schema_events": [],
+    "ideal_tone_map": {
+      "National Weather Service": "casual",
+      "Mom": "warm",
+      "State Farm Insurance": "casual",
+      "HR Department": "casual",
+      "Delta Airlines": "casual"
+    },
+    "episode_id": "ep_001"
+  },
+  {
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "National Weather Service",
+        "channel": "government_alert",
+        "content": "Mandatory Evacuation Order - Zone A",
+        "time": 0.0,
+        "type": "safety",
+        "deadline": 6.0
+      },
+      {
+        "id": "msg_002",
+        "sender": "Mom",
+        "channel": "sms",
+        "content": "Are you safe?",
+        "time": 0.5,
+        "type": "admin"
+      },
+      {
+        "id": "msg_003",
+        "sender": "State Farm Insurance",
+        "channel": "email",
+        "content": "Important: File your claim within 72 hours",
+        "time": 1.0,
+        "type": "admin",
+        "deadline": 73.0
+      },
+      {
+        "id": "msg_004",
+        "sender": "HR Department",
+        "channel": "email",
+        "content": "Remote work policy during emergency",
+        "time": 2.0,
+        "type": "work",
+        "deadline": 26.0
+      },
+      {
+        "id": "msg_005",
+        "sender": "Delta Airlines",
+        "channel": "app_notification",
+        "content": "Flight DL1847 Cancelled",
+        "time": 3.0,
+        "type": "work",
+        "deadline": 51.0
+      }
+    ],
+    "critical_ids": [
+      "msg_001",
+      "msg_002",
+      "msg_003"
+    ],
+    "deadlines": {
+      "task_msg_001": 6.0,
+      "task_msg_003": 73.0,
+      "task_msg_004": 26.0,
+      "task_msg_005": 51.0
+    },
+    "tasks": {
+      "task_msg_001": {
+        "category": "safety",
+        "sender": "National Weather Service"
+      },
+      "task_msg_003": {
+        "category": "admin",
+        "sender": "State Farm Insurance"
+      },
+      "task_msg_004": {
+        "category": "work",
+        "sender": "HR Department"
+      },
+      "task_msg_005": {
+        "category": "work",
+        "sender": "Delta Airlines"
+      }
+    },
+    "schema_events": [],
+    "ideal_tone_map": {
+      "National Weather Service": "casual",
+      "Mom": "warm",
+      "State Farm Insurance": "casual",
+      "HR Department": "casual",
+      "Delta Airlines": "casual"
+    },
+    "episode_id": "ep_002"
+  },
+  {
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "National Weather Service",
+        "channel": "government_alert",
+        "content": "Mandatory Evacuation Order - Zone A",
+        "time": 0.0,
+        "type": "safety",
+        "deadline": 6.0
+      },
+      {
+        "id": "msg_002",
+        "sender": "Mom",
+        "channel": "sms",
+        "content": "Are you safe?",
+        "time": 0.5,
+        "type": "admin"
+      },
+      {
+        "id": "msg_003",
+        "sender": "State Farm Insurance",
+        "channel": "email",
+        "content": "Important: File your claim within 72 hours",
+        "time": 1.0,
+        "type": "admin",
+        "deadline": 73.0
+      },
+      {
+        "id": "msg_004",
+        "sender": "HR Department",
+        "channel": "email",
+        "content": "Remote work policy during emergency",
+        "time": 2.0,
+        "type": "work",
+        "deadline": 26.0
+      },
+      {
+        "id": "msg_005",
+        "sender": "Delta Airlines",
+        "channel": "app_notification",
+        "content": "Flight DL1847 Cancelled",
+        "time": 3.0,
+        "type": "work",
+        "deadline": 51.0
+      }
+    ],
+    "critical_ids": [
+      "msg_001",
+      "msg_002",
+      "msg_003"
+    ],
+    "deadlines": {
+      "task_msg_001": 6.0,
+      "task_msg_003": 73.0,
+      "task_msg_004": 26.0,
+      "task_msg_005": 51.0
+    },
+    "tasks": {
+      "task_msg_001": {
+        "category": "safety",
+        "sender": "National Weather Service"
+      },
+      "task_msg_003": {
+        "category": "admin",
+        "sender": "State Farm Insurance"
+      },
+      "task_msg_004": {
+        "category": "work",
+        "sender": "HR Department"
+      },
+      "task_msg_005": {
+        "category": "work",
+        "sender": "Delta Airlines"
+      }
+    },
+    "schema_events": [],
+    "ideal_tone_map": {
+      "National Weather Service": "casual",
+      "Mom": "warm",
+      "State Farm Insurance": "casual",
+      "HR Department": "casual",
+      "Delta Airlines": "casual"
+    },
+    "episode_id": "ep_003"
+  },
+  {
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "National Weather Service",
+        "channel": "government_alert",
+        "content": "Mandatory Evacuation Order - Zone A",
+        "time": 0.0,
+        "type": "safety",
+        "deadline": 6.0
+      },
+      {
+        "id": "msg_002",
+        "sender": "Mom",
+        "channel": "sms",
+        "content": "Are you safe?",
+        "time": 0.5,
+        "type": "admin"
+      },
+      {
+        "id": "msg_003",
+        "sender": "State Farm Insurance",
+        "channel": "email",
+        "content": "Important: File your claim within 72 hours",
+        "time": 1.0,
+        "type": "admin",
+        "deadline": 73.0
+      },
+      {
+        "id": "msg_004",
+        "sender": "HR Department",
+        "channel": "email",
+        "content": "Remote work policy during emergency",
+        "time": 2.0,
+        "type": "work",
+        "deadline": 26.0
+      },
+      {
+        "id": "msg_005",
+        "sender": "Delta Airlines",
+        "channel": "app_notification",
+        "content": "Flight DL1847 Cancelled",
+        "time": 3.0,
+        "type": "work",
+        "deadline": 51.0
+      }
+    ],
+    "critical_ids": [
+      "msg_001",
+      "msg_002",
+      "msg_003"
+    ],
+    "deadlines": {
+      "task_msg_001": 6.0,
+      "task_msg_003": 73.0,
+      "task_msg_004": 26.0,
+      "task_msg_005": 51.0
+    },
+    "tasks": {
+      "task_msg_001": {
+        "category": "safety",
+        "sender": "National Weather Service"
+      },
+      "task_msg_003": {
+        "category": "admin",
+        "sender": "State Farm Insurance"
+      },
+      "task_msg_004": {
+        "category": "work",
+        "sender": "HR Department"
+      },
+      "task_msg_005": {
+        "category": "work",
+        "sender": "Delta Airlines"
+      }
+    },
+    "schema_events": [],
+    "ideal_tone_map": {
+      "National Weather Service": "casual",
+      "Mom": "warm",
+      "State Farm Insurance": "casual",
+      "HR Department": "casual",
+      "Delta Airlines": "casual"
+    },
+    "episode_id": "ep_004"
+  }
+]
