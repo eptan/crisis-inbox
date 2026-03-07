@@ -336,8 +336,7 @@ def crisis_reward_fn(prompts, completions, **kwargs):
 
 # Training config
 training_args = GRPOConfig(
-    use_vllm=True,
-    vllm_mode="colocate",
+    use_vllm=False,  # Disabled for Colab compatibility
     num_train_epochs=3,
     max_steps=200,  # Start with 200 for test
     per_device_train_batch_size=2,
