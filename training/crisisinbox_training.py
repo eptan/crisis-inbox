@@ -314,14 +314,18 @@ print(f"✓ Loaded model: {MODEL_NAME}")
 # Reward function
 EPISODES_LIST = [row["episode"] for row in crisis_dataset]
 
-def crisis_reward_fn(prompts, completions, tokenizer=None, **kwargs):
+def crisis_reward_fn(prompts, completions, **kwargs):
     rewards = []
     
     for prompt, completion in zip(prompts, completions):
-        # Convert completion to string if it's a list (token IDs)
+        # Convert completion to string - completion is list of token IDs
         if isinstance(completion, list):
-            if tokenizer is not None:
-                completion_str = tokenizer.decode(completion, skip_special_tokens=True)
+            # Access tokenizer from global scope
+            from unsloth import FastLanguageModel
+            model_obj = FastLanguageModel.get_model()
+            tokenizer_obj = model_obj.tokenizer if hasattr(model_obj, 'tokenizer') else None
+            if tokenizer_obj is not None:
+                completion_str = tokenizer_obj.decode(completion, skip_special_tokens=True)
             else:
                 completion_str = str(completion)
         else:
