@@ -193,8 +193,13 @@ def build_episode(seed: int) -> dict[str, Any]:
     }
 
 
-def format_prompt(hour: float, messages: list, deadlines: list, fired_drifts: list) -> str:
-    """Format an inbox state into a text prompt for the LLM."""
+def format_prompt(hour: float, messages: list, deadlines: list, fired_drifts: list,
+                  max_messages: int = 20) -> str:
+    """Format an inbox state into a text prompt for the LLM.
+
+    Only the top `max_messages` unhandled messages are shown (by urgency then
+    deadline), keeping prompts within ~1500 tokens for small-model training.
+    """
     lines = [SYSTEM_PROMPT, ""]
     lines.append(f"CURRENT TIME: Hour {hour:.1f} of 48 ({48 - hour:.1f} hours remaining)")
     lines.append(f"MESSAGES IN INBOX: {len(messages)}")
@@ -218,9 +223,19 @@ def format_prompt(hour: float, messages: list, deadlines: list, fired_drifts: li
         lines.append(f"POLICY CHANGES DETECTED: {len(fired_drifts)}")
         lines.append("")
 
-    # Group messages by urgency
+    # Prioritize unhandled messages by urgency then deadline
+    urgency_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    ranked = sorted(messages, key=lambda m: (
+        urgency_order.get(m["urgency"], 4),
+        0 if m.get("drift_flag") else 1,
+        m.get("deadline_hours") or 999,
+    ))
+    shown = ranked[:max_messages]
+    omitted = len(messages) - len(shown)
+
+    # Group shown messages by urgency
     by_urgency = {"critical": [], "high": [], "medium": [], "low": []}
-    for msg in messages:
+    for msg in shown:
         by_urgency.get(msg["urgency"], by_urgency["low"]).append(msg)
 
     for level in ["critical", "high", "medium", "low"]:
@@ -239,6 +254,10 @@ def format_prompt(hour: float, messages: list, deadlines: list, fired_drifts: li
                     preview += "..."
                 lines.append(f"    > {preview}")
             lines.append("")
+
+    if omitted > 0:
+        lines.append(f"  ({omitted} lower-priority messages not shown)")
+        lines.append("")
 
     lines.append("Which message should you handle next? Respond with respond_to_message(message_id, response).")
     return "\n".join(lines)
