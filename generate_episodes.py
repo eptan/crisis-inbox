@@ -251,7 +251,12 @@ def generate_episodes(num_episodes: int = 50, start_seed: int = 1000) -> list:
         seed = start_seed + i
         print(f"  Episode {i + 1}/{num_episodes} (seed={seed})...", end=" ")
         episode = build_episode(seed)
-        n_dp = len(episode["decision_points"])
+        # Some episodes may not have decision points; skip them.
+        decision_points = episode.get("decision_points")
+        if not decision_points:
+            print("skipped (no decision_points)")
+            continue
+        n_dp = len(decision_points)
         n_msg = episode["total_messages"]
         drifts = ", ".join(episode["drift_events"])
         print(f"{n_msg} messages, {n_dp} decision points, drifts: [{drifts}]")
@@ -263,7 +268,7 @@ def save_episodes(episodes: list, filename: str = "episodes.json"):
     """Save episodes to JSON file."""
     with open(filename, "w") as f:
         json.dump(episodes, f, indent=2)
-    total_prompts = sum(len(ep["decision_points"]) for ep in episodes)
+    total_prompts = sum(len(ep.get("decision_points", [])) for ep in episodes)
     print(f"\nSaved {len(episodes)} episodes ({total_prompts} training prompts) to {filename}")
 
 
