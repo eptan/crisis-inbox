@@ -318,6 +318,19 @@ def crisis_reward_fn(prompts, completions, **kwargs):
     rewards = []
     
     for prompt, completion in zip(prompts, completions):
+        # Convert completion to string - completion is list of token IDs
+        if isinstance(completion, list):
+            # Access tokenizer from global scope
+            from unsloth import FastLanguageModel
+            model_obj = FastLanguageModel.get_model()
+            tokenizer_obj = model_obj.tokenizer if hasattr(model_obj, 'tokenizer') else None
+            if tokenizer_obj is not None:
+                completion_str = tokenizer_obj.decode(completion, skip_special_tokens=True)
+            else:
+                completion_str = str(completion)
+        else:
+            completion_str = str(completion)
+        
         episode = None
         for ep in EPISODES_LIST:
             test_prompt = build_crisis_prompt(ep)
@@ -329,15 +342,14 @@ def crisis_reward_fn(prompts, completions, **kwargs):
             idx = kwargs.get("episode_idx", 0)
             episode = EPISODES_LIST[idx % len(EPISODES_LIST)]
         
-        reward = total_reward(episode, completion)
+        reward = total_reward(episode, completion_str)
         rewards.append(float(reward))
     
     return rewards
 
 # Training config
 training_args = GRPOConfig(
-    use_vllm=True,
-    vllm_mode="colocate",
+    use_vllm=False,  # Disabled for Colab compatibility
     num_train_epochs=3,
     max_steps=200,  # Start with 200 for test
     per_device_train_batch_size=2,
