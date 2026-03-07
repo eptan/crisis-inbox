@@ -304,7 +304,9 @@ MODEL_NAME = "unsloth/Qwen2.5-0.5B-Instruct"
 
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name=MODEL_NAME,
-    max_seq_length=2048,
+    # Allow longer combined prompt + completion to avoid
+    # attention mask shape mismatches during training.
+    max_seq_length=4096,
     dtype=None,
     load_in_4bit=True,
 )
@@ -367,7 +369,8 @@ training_args = GRPOConfig(
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
     num_generations=4,
-    max_completion_length=512,
+    # Keep completions modest so prompt+completion stay well within max_seq_length.
+    max_completion_length=256,
     temperature=0.7,
     learning_rate=1e-5,
     logging_steps=10,
