@@ -4144,8 +4144,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": [
           "drift_airline"
@@ -4812,8 +4812,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -5569,8 +5569,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -6356,8 +6356,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -7265,8 +7265,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -8266,8 +8266,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -9268,8 +9268,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_airline"
+          "drift_airline",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       }
@@ -14151,8 +14151,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_fema"
+          "drift_fema",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": [
           "drift_fema"
@@ -15028,8 +15028,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_fema"
+          "drift_fema",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -15974,8 +15974,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_fema"
+          "drift_fema",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -17008,8 +17008,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_fema"
+          "drift_fema",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       },
@@ -18072,8 +18072,8 @@
         ],
         "drift_events_fired": [
           "drift_insurance",
-          "drift_evacuation",
-          "drift_fema"
+          "drift_fema",
+          "drift_evacuation"
         ],
         "newly_fired_drifts": []
       }
