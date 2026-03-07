@@ -80,22 +80,34 @@ def build_crisis_prompt(episode):
 
 def parse_plan(model_output):
     """Parse <plan> tag output into list of action dicts."""
-    actions = []
-    
-    plan_match = re.search(r'<plan>(.*?)</plan>', model_output, re.DOTALL | re.IGNORECASE)
-    if not plan_match:
+    if model_output is None:
         return []
-    
-    plan_content = plan_match.group(1).strip()
-    
-    lines = plan_content.split('\n')
+
+    # TRL/Unsloth can return completions as lists (token ids, strings, or message dicts).
+    # Normalize to a single string before regex parsing.
+    if isinstance(model_output, list):
+        if model_output and isinstance(model_output[0], dict) and "content" in model_output[0]:
+            model_output = "\n".join(str(m.get("content", "")) for m in model_output)
+        else:
+            model_output = "\n".join(map(str, model_output))
+    else:
+        model_output = str(model_output)
+
+    actions = []
+
+    plan_match = re.search(r"<plan>(.*?)</plan>", model_output, re.DOTALL | re.IGNORECASE)
+    plan_content = plan_match.group(1).strip() if plan_match else model_output.strip()
+    if not plan_content:
+        return []
+
+    lines = plan_content.split("\n")
     for line in lines:
         line = line.strip()
         if not line or not line[0].isdigit():
             continue
         
         # Extract time: [time=min X]
-        time_match = re.search(r'time=min (\d+)', line)
+        time_match = re.search(r"time=min (\d+)", line, re.IGNORECASE)
         time_min = int(time_match.group(1)) if time_match else 0
         
         # Extract action description
