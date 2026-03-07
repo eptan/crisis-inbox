@@ -314,10 +314,19 @@ print(f"✓ Loaded model: {MODEL_NAME}")
 # Reward function
 EPISODES_LIST = [row["episode"] for row in crisis_dataset]
 
-def crisis_reward_fn(prompts, completions, **kwargs):
+def crisis_reward_fn(prompts, completions, tokenizer=None, **kwargs):
     rewards = []
     
     for prompt, completion in zip(prompts, completions):
+        # Convert completion to string if it's a list (token IDs)
+        if isinstance(completion, list):
+            if tokenizer is not None:
+                completion_str = tokenizer.decode(completion, skip_special_tokens=True)
+            else:
+                completion_str = str(completion)
+        else:
+            completion_str = str(completion)
+        
         episode = None
         for ep in EPISODES_LIST:
             test_prompt = build_crisis_prompt(ep)
@@ -329,7 +338,7 @@ def crisis_reward_fn(prompts, completions, **kwargs):
             idx = kwargs.get("episode_idx", 0)
             episode = EPISODES_LIST[idx % len(EPISODES_LIST)]
         
-        reward = total_reward(episode, completion)
+        reward = total_reward(episode, completion_str)
         rewards.append(float(reward))
     
     return rewards
