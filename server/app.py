@@ -23,7 +23,17 @@ except ImportError:
 
 
 class MCPAction(Action):
-    """Action class that deserializes both ListToolsAction and CallToolAction."""
+    """Action class that deserializes both ListToolsAction and CallToolAction.
+
+    OpenEnv 0.2.1's WS handler passes a single action_cls to
+    deserialize_action(), but MCPToolClient sends both ListToolsAction
+    and CallToolAction through the "step" message path. Since the base
+    Action model uses extra="forbid", a fixed action_cls can't handle
+    both shapes. We override model_validate to route by the "type" field
+    so that MCPEnvironment.step() receives the correct Action subclass.
+    extra="allow" is needed because the two action types have different
+    field sets.
+    """
 
     model_config = Action.model_config.copy()
     model_config["extra"] = "allow"

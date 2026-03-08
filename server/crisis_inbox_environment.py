@@ -34,6 +34,9 @@ class CrisisInboxEnvironment(MCPEnvironment):
     """
     Simulates a 48-hour post-disaster inbox triage scenario.
 
+    Note: SUPPORTS_CONCURRENT_SESSIONS is False (default) because the
+    environment holds mutable per-episode state (_all_messages, _handled, etc).
+
     The agent receives messages from family, employers, government agencies,
     insurance companies, and service providers. It must prioritize safety,
     meet deadlines, and adapt to changing rules (schema drift).

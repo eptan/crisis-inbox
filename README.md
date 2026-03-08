@@ -166,7 +166,7 @@ crisis-inbox/
 │   └── Dockerfile                      # HF Spaces deployment
 ├── notebooks/
 │   └── crisisinbox_grpo_simple.ipynb   # GRPO training notebook (Colab)
-├── episodes.json                       # Pre-generated training episodes
+├── .episodes.json                      # Pre-generated training episodes (gitignored)
 ├── generate_episodes.py                # Episode generator script
 ├── pyproject.toml                      # Package config
 ├── openenv.yaml                        # OpenEnv environment spec

@@ -4,8 +4,7 @@ Person B: ML Pipeline
 
 Run this in Google Colab:
 1. Upload this file
-2. Upload episodes.json from repo
-3. Run: python crisisinbox_training.py
+2. Run: python crisisinbox_training.py
 """
 
 import torch
@@ -16,12 +15,14 @@ from datasets import Dataset
 from unsloth import FastLanguageModel
 from trl import GRPOConfig, GRPOTrainer
 
-# Download episodes from GitHub repo
+# Download episodes from HF dataset
 print("Loading episodes...")
-import urllib.request
-urllib.request.urlretrieve(
-    "https://raw.githubusercontent.com/eptan/crisis-inbox/main/episodes.json",
-    "episodes.json"
+from huggingface_hub import hf_hub_download
+hf_hub_download(
+    repo_id="eptan/crisis-inbox-episodes",
+    filename="episodes.json",
+    repo_type="dataset",
+    local_dir=".",
 )
 
 with open("episodes.json", "r") as f:

@@ -208,3 +208,7 @@ __marimo__/
 
 #Claude
 .claude/*
+
+# Training data
+.episodes.json
+.sample_episodes.json

@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.claude/
+*.egg-info/
+.episodes.json
+.sample_episodes.json
+notebooks/
+Dockerfile.notebook
+hf_readme.md
+ROADMAP.md
+debug_env.py
+.gitattributes
+uv.lock

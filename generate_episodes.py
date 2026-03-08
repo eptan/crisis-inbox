@@ -297,7 +297,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate CrisisInbox training episodes")
     parser.add_argument("-n", "--num-episodes", type=int, default=50, help="Number of episodes")
     parser.add_argument("-s", "--start-seed", type=int, default=1000, help="Starting seed")
-    parser.add_argument("-o", "--output", type=str, default="episodes.json", help="Output file")
+    parser.add_argument("-o", "--output", type=str, default=".episodes.json", help="Output file")
     parser.add_argument("--sample", type=int, default=5, help="Also save N sample episodes")
     args = parser.parse_args()
 
@@ -306,5 +306,5 @@ if __name__ == "__main__":
     save_episodes(episodes, args.output)
 
     if args.sample > 0:
-        sample_file = "sample_episodes.json"
+        sample_file = ".sample_episodes.json"
         save_episodes(episodes[:args.sample], sample_file)
