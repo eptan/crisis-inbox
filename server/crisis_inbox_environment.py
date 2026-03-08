@@ -17,6 +17,7 @@ from typing import Any, Optional
 from uuid import uuid4
 
 from openenv.core.env_server.mcp_environment import MCPEnvironment
+from openenv.core.env_server.mcp_types import CallToolAction
 from openenv.core.env_server.types import Action, Observation, State
 from fastmcp import FastMCP
 

@@ -75,20 +75,17 @@ app = create_app(
     env_name="crisis_inbox",
 )
 
-# Mount Gradio demo UI at /demo
+# Mount static matplotlib demo at /demo
 try:
-    import gradio as gr
-    from server.demo_ui import build_demo
+    from server.demo_ui import router as demo_router
 except ImportError:
     try:
-        from .demo_ui import build_demo
-        import gradio as gr
+        from .demo_ui import router as demo_router
     except ImportError:
-        build_demo = None
+        demo_router = None
 
-if build_demo is not None:
-    demo = build_demo()
-    app = gr.mount_gradio_app(app, demo, path="/demo", root_path="/demo")
+if demo_router is not None:
+    app.include_router(demo_router)
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):
