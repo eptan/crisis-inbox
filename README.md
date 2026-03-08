@@ -145,7 +145,7 @@ crisis-inbox/
 │   ├── app.py                          # FastAPI app with MCPAction workaround
 │   └── Dockerfile                      # HF Spaces deployment
 ├── notebooks/
-│   └── crisisinbox_grpo.ipynb          # GRPO training notebook
+│   └── crisisinbox_grpo_simple.ipynb   # GRPO training notebook (Colab)
 ├── episodes.json                       # Pre-generated training episodes
 ├── generate_episodes.py                # Episode generator script
 ├── pyproject.toml                      # Package config
@@ -160,6 +160,14 @@ crisis-inbox/
 - **Deployment:** HF Spaces (Docker)
 - **Training:** Unsloth GRPO via Google Colab
 - **Model:** Qwen2.5-0.5B-Instruct
+
+### GRPO training (Colab)
+
+Open the notebook with the latest fixes (context length, reward signature, left-padding, batch size) in Google Colab (T4 GPU runtime):
+
+**[Open in Colab](https://colab.research.google.com/github/eptan/crisis-inbox/blob/main/notebooks/crisisinbox_grpo_simple.ipynb)**
+
+Push your local changes to the `main` branch so the link above serves the updated notebook.
 
 ## Team
 
