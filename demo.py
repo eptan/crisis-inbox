@@ -18,8 +18,7 @@ import json
 import sys
 import time
 
-from server.crisis_inbox_environment import CrisisInboxEnvironment
-from openenv.core.env_server.mcp_types import CallToolAction
+from server.crisis_inbox_environment import CrisisInboxEnvironment, CrisisInboxAction
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +175,11 @@ def run_demo(strategy: str = "smart", seed: int = 42, speed: float = 0.3):
     obs = env.reset(seed=seed)
 
     def call(tool, **kwargs):
-        o = env.step(CallToolAction(type="call_tool", tool_name=tool, arguments=kwargs))
-        return json.loads(o.result.data)
+        o = env.step(CrisisInboxAction(tool_name=tool, arguments=kwargs))
+        result = o.result
+        if isinstance(result, str):
+            return json.loads(result)
+        return result
 
     prioritize = smart_priority if strategy == "smart" else naive_order
     strategy_name = "SMART TRIAGE" if strategy == "smart" else "NAIVE (arrival order)"

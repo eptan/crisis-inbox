@@ -51,7 +51,7 @@ def _generate_demo_html(seed: int = 42) -> str:
                     "urgency": m.urgency.value,
                     "sender": m.sender,
                     "subject": m.subject,
-                    "content": m.content[:200],
+                    "content": m.content[:300],
                     "channel": m.channel.value,
                     "deadline": m.deadline_hours,
                     "drift": m.drift_flag,
@@ -67,14 +67,26 @@ def _generate_demo_html(seed: int = 42) -> str:
 
     drift_msgs = [a for a in arrivals if a["drift"]]
 
-    # Build HTML
+    # Build a lookup for superseded messages so we can show before/after
+    msg_by_id = {a["id"]: a for a in arrivals}
+
+    # Build HTML message rows
     msg_rows = ""
     for a in arrivals:
         color = URGENCY_COLORS.get(a["urgency"], "#6b7280")
         drift_badge = '<span style="background:#7c3aed;color:white;padding:1px 6px;border-radius:4px;font-size:11px;margin-left:6px;">DRIFT</span>' if a["drift"] else ""
-        supersedes_badge = f'<span style="background:#6b7280;color:white;padding:1px 6px;border-radius:4px;font-size:11px;margin-left:6px;">supersedes {a["supersedes"]}</span>' if a.get("supersedes") else ""
+        supersedes_badge = ""
+        if a.get("supersedes"):
+            old = msg_by_id.get(a["supersedes"])
+            old_label = f' &mdash; was: "{old["subject"]}"' if old else ""
+            supersedes_badge = f'<span style="background:#6b7280;color:white;padding:1px 6px;border-radius:4px;font-size:11px;margin-left:6px;">replaces {a["supersedes"]}{old_label}</span>'
         deadline_text = f'<span style="color:#6b7280;"> | deadline: hr {a["deadline"]:.0f}</span>' if a["deadline"] else ""
-        msg_rows += f"""<div style="border-left:4px solid {color};padding:6px 10px;margin:4px 0;background:#fafafa;border-radius:0 4px 4px 0;">
+
+        # Highlight drift messages with a distinct background
+        bg = "#f5f3ff" if a["drift"] else "#fafafa"
+        border_color = "#7c3aed" if a["drift"] else color
+
+        msg_rows += f"""<div style="border-left:4px solid {border_color};padding:6px 10px;margin:4px 0;background:{bg};border-radius:0 4px 4px 0;">
             <span style="color:{color};font-weight:bold;font-size:12px;">{a["urgency"].upper()}</span>
             <b>{a["id"]}</b> | {a["sender"]} via {a["channel"]}{deadline_text}{drift_badge}{supersedes_badge}
             <br/><span style="color:#374151;">{a["subject"]}</span>
@@ -97,14 +109,39 @@ def _generate_demo_html(seed: int = 42) -> str:
             <span style="font-size:12px;color:#6b7280;margin-left:4px;">{pct:.0f}%</span>
         </div>"""
 
-    # Drift events list
+    # Drift events — detailed cards showing impact
     drift_list = ""
     if drift_msgs:
         for d in sorted(drift_msgs, key=lambda x: x["hour"]):
-            sup = f" (supersedes {d['supersedes']})" if d.get("supersedes") else ""
-            drift_list += f'<div style="margin:4px 0;padding:4px 8px;background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:0 4px 4px 0;"><b>Hour {d["hour"]:.1f}</b> — {d["subject"]}{sup}</div>'
+            sup_html = ""
+            if d.get("supersedes"):
+                old = msg_by_id.get(d["supersedes"])
+                if old:
+                    sup_html = f"""<div style="margin-top:6px;padding:6px 8px;background:#fef2f2;border-radius:4px;font-size:12px;">
+                        <span style="color:#dc2626;font-weight:bold;">INVALIDATES {old['id']}</span>: "{old['subject']}"
+                        <br/><span style="color:#6b7280;">An agent acting on the old info would get a 50% stale-info penalty.
+                        It must detect this change from the message content alone &mdash; no drift flag is exposed.</span>
+                    </div>"""
+
+            drift_list += f"""<div style="margin:8px 0;padding:10px 12px;background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:0 6px 6px 0;">
+                <div style="font-size:14px;font-weight:bold;color:#7c3aed;">Hour {d["hour"]:.1f} &mdash; {d["subject"]}</div>
+                <div style="margin-top:4px;font-size:13px;color:#374151;">{d["content"]}</div>
+                {sup_html}
+            </div>"""
     else:
         drift_list = '<div style="color:#6b7280;">No drift events in this episode.</div>'
+
+    # How drift works explanation
+    drift_explainer = f"""<div style="margin:12px 0;padding:12px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;font-size:13px;color:#581c87;">
+        <b>Schema Drift Challenge</b> &mdash; Each episode fires <b>3 of 9</b> possible drift events at random.
+        When a policy changes, a new message arrives that <b>supersedes</b> an earlier one.
+        The agent receives <b>no explicit flag</b> &mdash; it must detect the change from message content
+        (subjects say "UPDATED:", "EXPANDED:", etc.) and reprioritize.
+        <br/><br/>
+        <b>Reward impact:</b> Handling a drift message earns <b>+50% bonus</b>.
+        Acting on superseded (stale) info gets a <b>-50% penalty</b>.
+        This seed fires <b>{len(drift_msgs)} drift event{"s" if len(drift_msgs) != 1 else ""}</b> below.
+    </div>"""
 
     html = f"""<!DOCTYPE html>
 <html>
@@ -128,9 +165,14 @@ def _generate_demo_html(seed: int = 42) -> str:
 <body>
 <div class="container">
     <h1>CrisisInbox — Scenario Overview</h1>
+    <p style="color:#6b7280;margin:4px 0 12px;font-size:14px;">
+        48-hour post-disaster inbox with 116 messages from 30+ senders.
+        The agent must triage under pressure &mdash; every action costs time, and the rules keep changing.
+    </p>
     <div class="seed-nav">
         Seed: <b>{seed}</b> |
-        Try: <a href="?seed=0">0</a> <a href="?seed=7">7</a> <a href="?seed=42">42</a> <a href="?seed=99">99</a> <a href="?seed=123">123</a>
+        Try: <a href="?seed=0">0</a> <a href="?seed=3">3</a> <a href="?seed=7">7</a> <a href="?seed=42">42</a> <a href="?seed=123">123</a>
+        <span style="color:#9ca3af;margin-left:8px;">(each seed fires different drift events)</span>
     </div>
 
     <div class="stats">
@@ -143,7 +185,8 @@ def _generate_demo_html(seed: int = 42) -> str:
     <h2>Urgency Distribution</h2>
     {urgency_bars}
 
-    <h2>Drift Events (Policy Changes)</h2>
+    <h2>Schema Drift — Policy Changes Mid-Crisis</h2>
+    {drift_explainer}
     {drift_list}
 
     <h2>All Messages ({total})</h2>

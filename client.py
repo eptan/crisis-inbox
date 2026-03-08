@@ -1,7 +1,7 @@
 """
 CrisisInbox Environment Client.
 
-Connects to a running CrisisInbox server via WebSocket.
+Connects to a running CrisisInbox server via OpenEnv WebSocket sessions.
 Provides prompt building, episode collection, and evaluation utilities.
 """
 
@@ -9,43 +9,101 @@ import json
 import re
 from typing import Any, Callable, Optional
 
-from openenv.core.mcp_client import MCPToolClient
-from openenv.core.env_server.mcp_types import CallToolAction
+import websockets.sync.client as ws_client
 
 
-class CrisisInboxEnv(MCPToolClient):
+class CrisisInboxEnv:
     """
-    Client for the CrisisInbox Environment.
+    WebSocket client for the CrisisInbox Environment (OpenEnv protocol).
 
-    Provides MCP tool-calling interface:
-    - list_tools(): Discover available tools
-    - call_tool(name, **kwargs): Call a tool by name
-    - reset(): Reset the environment
-    - step(action): Execute an action
+    Uses OpenEnv's /ws endpoint for persistent sessions.
 
     Example:
         >>> with CrisisInboxEnv(base_url="http://localhost:8000") as env:
-        ...     env.reset()
-        ...     tools = env.list_tools()
+        ...     env.reset(seed=42)
         ...     inbox = env.call_tool("get_inbox")
         ...     print(inbox)
     """
-    pass
+
+    def __init__(self, base_url: str = "http://localhost:8000", timeout: float = 60.0):
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+        # Convert http(s) to ws(s)
+        ws_url = self.base_url.replace("https://", "wss://").replace("http://", "ws://")
+        self._ws_url = f"{ws_url}/ws"
+        self._ws: Any = None
+
+    def _connect(self):
+        if self._ws is None:
+            self._ws = ws_client.connect(self._ws_url, open_timeout=self.timeout)
+
+    def _send(self, msg_type: str, data: dict) -> dict:
+        """Send a WebSocket message and return the response."""
+        self._connect()
+        self._ws.send(json.dumps({"type": msg_type, "data": data}))
+        raw = self._ws.recv(timeout=self.timeout)
+        resp = json.loads(raw)
+        if resp.get("type") == "error":
+            raise RuntimeError(f"Server error: {resp.get('data', {}).get('message', resp)}")
+        return resp.get("data", resp)
+
+    def reset(self, seed: Optional[int] = None) -> dict:
+        """Reset the environment via OpenEnv WebSocket protocol."""
+        data: dict[str, Any] = {}
+        if seed is not None:
+            data["seed"] = seed
+        resp = self._send("reset", data)
+        # resp is {"observation": {...}, "reward": ..., "done": ...}
+        obs = resp.get("observation", resp)
+        return obs
+
+    def step(self, tool_name: str, **arguments: Any) -> dict:
+        """Send an action via OpenEnv WebSocket step. Returns observation dict."""
+        action = {"tool_name": tool_name, "arguments": arguments}
+        resp = self._send("step", action)
+        obs = resp.get("observation", resp)
+        # Merge reward/done for convenience
+        if "reward" in resp:
+            obs["reward"] = resp["reward"]
+        if "done" in resp:
+            obs["done"] = resp["done"]
+        return obs
+
+    def call_tool(self, tool_name: str, **kwargs: Any) -> str:
+        """Call a tool and return the result as a JSON string (convenience wrapper)."""
+        obs = self.step(tool_name, **kwargs)
+        result = obs.get("result", obs)
+        return json.dumps(result) if isinstance(result, (dict, list)) else str(result)
+
+    def get_state(self) -> dict:
+        """Get environment state via OpenEnv WebSocket protocol."""
+        self._connect()
+        self._ws.send(json.dumps({"type": "state"}))
+        raw = self._ws.recv(timeout=self.timeout)
+        resp = json.loads(raw)
+        return resp.get("data", resp)
+
+    def close(self):
+        if self._ws is not None:
+            try:
+                self._ws.send(json.dumps({"type": "close", "data": {}}))
+            except Exception:
+                pass
+            try:
+                self._ws.close()
+            except Exception:
+                pass
+            self._ws = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
 
 
 def build_prompt(inbox: list[dict], hour: float) -> str:
-    """Build a triage prompt from the current inbox state.
-
-    Formats the inbox into a structured text prompt that instructs the
-    model to pick the most important unhandled message and respond.
-
-    Args:
-        inbox: List of message dicts from the get_inbox tool.
-        hour: Current simulation hour (0-48).
-
-    Returns:
-        Formatted prompt string.
-    """
+    """Build a triage prompt from the current inbox state."""
     lines = [
         f"You are managing a crisis inbox during a natural disaster. It is hour {hour:.1f} of 48.",
         f"You have {len(inbox)} messages. Unhandled messages need your attention.",
@@ -55,7 +113,6 @@ def build_prompt(inbox: list[dict], hour: float) -> str:
     ]
     for msg in inbox:
         status = "HANDLED" if msg.get("handled") else "UNHANDLED"
-        # drift_flag intentionally not shown — agent must detect from content
         superseded = " [SUPERSEDED]" if msg.get("superseded") else ""
         deadline_str = f", deadline: hour {msg['deadline_hours']}" if msg.get("deadline_hours") else ""
         lines.append(
@@ -78,51 +135,30 @@ def collect_episode(
     seed: int,
     time_steps: Optional[list[float]] = None,
 ) -> dict:
-    """Collect one episode from the live environment.
-
-    Connects via WebSocket, resets with the given seed, then snapshots the
-    inbox at several time points to create decision-point prompts.
-
-    Args:
-        base_url: URL of the CrisisInbox server.
-        seed: Random seed for the episode.
-        time_steps: Simulation hours at which to snapshot. Defaults to
-                    [0, 2, 6, 12, 18, 24, 30, 36, 42, 47].
-
-    Returns:
-        Episode dict with 'episode_id', 'seed', 'decision_points', etc.
-    """
+    """Collect one episode from the live environment via WebSocket."""
     if time_steps is None:
         time_steps = [0, 2, 6, 12, 18, 24, 30, 36, 42, 47]
 
     superseded_msgs: dict[str, str] = {}
 
-    with MCPToolClient(
-        base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0,
-    ) as env:
+    with CrisisInboxEnv(base_url=base_url, timeout=120.0) as env:
         env.reset(seed=seed)
         decision_points = []
         current_hour = 0.0
 
         for target_hour in time_steps:
-            # Advance time to reach the target hour
             while current_hour < target_hour - 0.1:
                 jump = min(4.0, target_hour - current_hour)
                 env.call_tool("advance_time", hours=jump)
-                status_raw = env.call_tool("get_status")
-                status = json.loads(status_raw) if isinstance(status_raw, str) else status_raw
+                status = json.loads(env.call_tool("get_status"))
                 current_hour = status["current_hour"]
 
-            # Snapshot the inbox
-            inbox_raw = env.call_tool("get_inbox")
-            inbox = json.loads(inbox_raw) if isinstance(inbox_raw, str) else inbox_raw
+            inbox = json.loads(env.call_tool("get_inbox"))
 
-            # Track superseded messages
             for m in inbox:
                 if m.get("superseded"):
                     superseded_msgs[m["id"]] = ""
 
-            # Only create a decision point if there are unhandled messages
             unhandled = [m for m in inbox if not m.get("handled", False)]
             if not unhandled:
                 continue
@@ -146,42 +182,25 @@ def collect_episode(
 
 
 def extract_tool_result(obs: Any) -> dict:
-    """Extract the JSON result dict from a CallToolObservation.
-
-    obs.result may be a plain string, a dict with 'data' key (FastMCP
-    CallToolResult serialization), or an object with a .data attribute.
-    Normalizes to a dict.
-    """
-    raw = getattr(obs, "result", None)
-
-    # FastMCP CallToolResult object -> unwrap .data
-    if hasattr(raw, "data"):
-        raw = raw.data
-
-    # Serialized as {"data": "..."} dict
-    if isinstance(raw, dict) and "data" in raw:
-        raw = raw["data"]
-
-    # Now raw should be a JSON string
-    if isinstance(raw, str):
+    """Extract result dict from an observation."""
+    if isinstance(obs, dict):
+        result = obs.get("result", obs)
+        if isinstance(result, str):
+            try:
+                return json.loads(result)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return result if isinstance(result, dict) else {}
+    if isinstance(obs, str):
         try:
-            return json.loads(raw)
+            return json.loads(obs)
         except (json.JSONDecodeError, TypeError):
             return {}
-
-    # Already a dict
-    if isinstance(raw, dict):
-        return raw
-
     return {}
 
 
 def parse_action(completion: str) -> tuple[Optional[str], str]:
-    """Parse a model completion for respond_to_message(msg_id, response).
-
-    Returns:
-        Tuple of (msg_id, response_text). msg_id is None if unparseable.
-    """
+    """Parse a model completion for respond_to_message(msg_id, response)."""
     match = re.search(
         r'respond_to_message\s*\(\s*["\']?(msg_\d+)["\']?\s*,\s*["\'](.+?)["\']',
         completion, re.DOTALL,
@@ -203,26 +222,8 @@ def evaluate_on_live_env(
     max_steps: int = 20,
     verbose: bool = True,
 ) -> dict:
-    """Run a model against the live environment using OpenEnv's step() flow.
-
-    Uses env.step(CallToolAction(...)) for respond_to_message so that
-    rewards flow through Observation.reward — the standard OpenEnv contract.
-    Read-only tools (get_inbox, get_status, advance_time) use call_tool().
-
-    Args:
-        generate_fn: Callable that takes a prompt string and returns
-                     a model completion string.
-        base_url: URL of the CrisisInbox server.
-        seed: Random seed for the episode.
-        max_steps: Maximum number of actions to take.
-        verbose: Whether to print per-step results.
-
-    Returns:
-        Dict with 'seed', 'total_reward', 'actions', 'final_status'.
-    """
-    with MCPToolClient(
-        base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0,
-    ) as env:
+    """Run a model against the live environment using OpenEnv's step() flow."""
+    with CrisisInboxEnv(base_url=base_url, timeout=120.0) as env:
         env.reset(seed=seed)
         total_reward = 0.0
         actions_taken = []
@@ -248,24 +249,21 @@ def evaluate_on_live_env(
                 env.call_tool("advance_time", hours=1.0)
                 continue
 
-            # Use env.step() with CallToolAction so reward flows through
-            # OpenEnv's Observation.reward — the proper RL loop contract.
-            action = CallToolAction(
-                tool_name="respond_to_message",
-                arguments={"message_id": msg_id, "response": response_text},
-            )
-            step_result = env.step(action)
-            obs = step_result.observation
+            # Use step() so reward flows through OpenEnv's observation
+            obs = env.step("respond_to_message",
+                           message_id=msg_id, response=response_text)
+            result_data = obs.get("result", {})
+            if isinstance(result_data, str):
+                result_data = json.loads(result_data)
 
-            reward = obs.reward if obs.reward is not None else 0.0
-            done = obs.done
-
-            result_data = extract_tool_result(obs)
             if "error" in result_data:
                 env.call_tool("advance_time", hours=1.0)
                 continue
 
+            reward = obs.get("reward", 0.0)
+            done = obs.get("done", False)
             total_reward += reward
+
             target_msg = next((m for m in inbox if m["id"] == msg_id), None)
             urgency = target_msg["urgency"] if target_msg else "?"
             actions_taken.append({
