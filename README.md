@@ -109,13 +109,18 @@ with GenericEnvClient("https://eptan-crisis-inbox.hf.space", message_timeout_s=6
 
 ## Training
 
-Training notebook connects to the live HF Space environment:
+Training uses **online GRPO** — the reward function calls `env.step()` on the live OpenEnv environment for each generated action, so rewards come directly from the environment's full game state (deadlines, drift events, superseded messages).
 
-| Notebook | Stack | Approach |
-|----------|-------|----------|
-| `notebooks/crisisinbox_grpo_northflank.ipynb` | Unsloth + HF TRL GRPO | LoRA with 2x Unsloth speedup |
+**Notebook:** [`notebooks/crisisinbox_grpo_northflank.ipynb`](notebooks/crisisinbox_grpo_northflank.ipynb) — Unsloth + HF TRL GRPO with LoRA (2x speedup)
 
-Trains Qwen2.5-0.5B-Instruct with GRPO using a multi-component reward function that bootstraps format compliance first, then optimizes triage quality.
+**Training loop:**
+1. Collect prompts from live environment episodes (varied seeds)
+2. Model generates `respond_to_message(msg_id, response)` completions
+3. For each completion, reset environment to the episode state and call `env.step()` to get the reward
+4. Format compliance scored locally (graduated credit for parseable output)
+5. GRPO updates the policy using relative reward rankings within each batch
+
+Trains Qwen2.5-0.5B-Instruct with 200 steps, 16 generations per step, learning rate 1e-6.
 
 ## Deployment
 

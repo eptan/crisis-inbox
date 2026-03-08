@@ -451,6 +451,23 @@ class CrisisInboxEnvironment(Environment):
         rewards = [score_action(c, prompt_data) for c in completions]
         return {"rewards": rewards}
 
+    def score_completions(self, completions: list[str]) -> dict:
+        """Score model completions against the CURRENT environment state.
+
+        Used for online GRPO training — the environment provides its own
+        prompt_data from its current state, so the trainer doesn't need to
+        pass inbox snapshots over the network.
+        """
+        self._deliver_messages()
+        inbox = self.get_inbox()
+        prompt_data = {
+            "messages": inbox,
+            "hour": self._current_hour,
+            "superseded": {mid: "" for mid in self._superseded},
+        }
+        rewards = [score_action(c, prompt_data) for c in completions]
+        return {"rewards": rewards, "hour": self._current_hour, "n_messages": len(inbox)}
+
     def _advance_clock(self, hours: float):
         """Advance the clock and deliver any new messages/drift events."""
         self._current_hour = min(48.0, self._current_hour + hours)
@@ -620,6 +637,8 @@ class CrisisInboxEnvironment(Environment):
             result = self.advance_time(**args)
         elif name == "score_batch":
             result = self.score_batch(**args)
+        elif name == "score_completions":
+            result = self.score_completions(**args)
         else:
             result = {"error": f"Unknown tool: {name}"}
 
