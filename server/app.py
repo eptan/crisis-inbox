@@ -88,7 +88,7 @@ except ImportError:
 
 if build_demo is not None:
     demo = build_demo()
-    app = gr.mount_gradio_app(app, demo, path="/demo")
+    app = gr.mount_gradio_app(app, demo, path="/demo", root_path="/demo")
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):
