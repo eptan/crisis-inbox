@@ -33,6 +33,9 @@ print(f"✓ Loaded {len(EPISODES)} episodes")
 # PROMPT BUILDING
 # =============================================================================
 
+MAX_MESSAGES = 40
+MAX_DRIFT_EVENTS = 20
+
 CRISIS_SYSTEM_PROMPT = """
 You are an assistant helping a working parent during a wildfire.
 You must triage messages, act on safety-critical items first,
@@ -56,10 +59,17 @@ def build_crisis_prompt(episode):
         msgs_str.append(
             f"[t={m['time']}h] {urgency} From {m['sender']} via {m['channel']}: {m['content']}{deadline_info}"
         )
-    
+
+    # Keep only the most recent messages to avoid overlong sequences.
+    if len(msgs_str) > MAX_MESSAGES:
+        msgs_str = msgs_str[-MAX_MESSAGES:]
+
     drift_str = []
     for d in episode.get("schema_events", []):
         drift_str.append(f"[t={d['time']}h] POLICY UPDATE: {d['kind']} -> {d.get('new_value', 'changed')}")
+
+    if len(drift_str) > MAX_DRIFT_EVENTS:
+        drift_str = drift_str[-MAX_DRIFT_EVENTS:]
     
     user_content = (
         "Here is your 48-hour message history:\n\n"
@@ -80,22 +90,34 @@ def build_crisis_prompt(episode):
 
 def parse_plan(model_output):
     """Parse <plan> tag output into list of action dicts."""
-    actions = []
-    
-    plan_match = re.search(r'<plan>(.*?)</plan>', model_output, re.DOTALL | re.IGNORECASE)
-    if not plan_match:
+    if model_output is None:
         return []
-    
-    plan_content = plan_match.group(1).strip()
-    
-    lines = plan_content.split('\n')
+
+    # TRL/Unsloth can return completions as lists (token ids, strings, or message dicts).
+    # Normalize to a single string before regex parsing.
+    if isinstance(model_output, list):
+        if model_output and isinstance(model_output[0], dict) and "content" in model_output[0]:
+            model_output = "\n".join(str(m.get("content", "")) for m in model_output)
+        else:
+            model_output = "\n".join(map(str, model_output))
+    else:
+        model_output = str(model_output)
+
+    actions = []
+
+    plan_match = re.search(r"<plan>(.*?)</plan>", model_output, re.DOTALL | re.IGNORECASE)
+    plan_content = plan_match.group(1).strip() if plan_match else model_output.strip()
+    if not plan_content:
+        return []
+
+    lines = plan_content.split("\n")
     for line in lines:
         line = line.strip()
         if not line or not line[0].isdigit():
             continue
         
         # Extract time: [time=min X]
-        time_match = re.search(r'time=min (\d+)', line)
+        time_match = re.search(r"time=min (\d+)", line, re.IGNORECASE)
         time_min = int(time_match.group(1)) if time_match else 0
         
         # Extract action description
@@ -292,7 +314,9 @@ MODEL_NAME = "unsloth/Qwen2.5-0.5B-Instruct"
 
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name=MODEL_NAME,
-    max_seq_length=2048,
+    # Allow longer combined prompt + completion to avoid
+    # attention mask shape mismatches during training.
+    max_seq_length=4096,
     dtype=None,
     load_in_4bit=True,
 )
@@ -355,7 +379,8 @@ training_args = GRPOConfig(
     per_device_train_batch_size=2,
     gradient_accumulation_steps=4,
     num_generations=4,
-    max_completion_length=512,
+    # Keep completions modest so prompt+completion stay well within max_seq_length.
+    max_completion_length=256,
     temperature=0.7,
     learning_rate=1e-5,
     logging_steps=10,
