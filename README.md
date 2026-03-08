@@ -65,7 +65,7 @@ Each episode randomly fires 3 of 9 drift events. The agent receives no explicit 
 | HR / EAP | 4 | Policy updates | Leave policies, crisis counseling |
 | + 14 others | 25 | Various | Pharmacy, landlord, mutual aid, church, legal aid, etc. |
 
-### MCP Tools (Agent Actions)
+### Tools (Agent Actions)
 
 | Tool | Time Cost | Description |
 |------|-----------|-------------|
@@ -99,24 +99,23 @@ Each episode has:
 ## Quick Start (Hosted)
 
 ```python
-from openenv.core.mcp_client import MCPToolClient
+from openenv import GenericEnvClient, GenericAction
 
-with MCPToolClient(base_url="https://eptan-crisis-inbox.hf.space").sync() as env:
+with GenericEnvClient("https://eptan-crisis-inbox.hf.space", message_timeout_s=60.0).sync() as env:
     env.reset(seed=42)
-    inbox = env.call_tool("get_inbox")
-    print(inbox)
+    result = env.step(GenericAction(tool_name="get_inbox", arguments={}))
+    print(result.observation)
 ```
 
 ## Training
 
-Two training notebooks are provided, both connecting to the live HF Space environment:
+Training notebook connects to the live HF Space environment:
 
 | Notebook | Stack | Approach |
 |----------|-------|----------|
-| `notebooks/crisisinbox_grpo_northflank.ipynb` | HF TRL + GRPO | Full fine-tuning (no LoRA) |
-| `notebooks/crisisinbox_unsloth.ipynb` | Unsloth + GRPO | LoRA with 2x Unsloth speedup |
+| `notebooks/crisisinbox_grpo_northflank.ipynb` | Unsloth + HF TRL GRPO | LoRA with 2x Unsloth speedup |
 
-Both train Qwen2.5-0.5B-Instruct with GRPO using a multi-component reward function that bootstraps format compliance first, then optimizes triage quality.
+Trains Qwen2.5-0.5B-Instruct with GRPO using a multi-component reward function that bootstraps format compliance first, then optimizes triage quality.
 
 ## Deployment
 
@@ -155,29 +154,31 @@ uvicorn server.app:app --host 0.0.0.0 --port 8000
 Test with the client:
 
 ```python
-from openenv.core.mcp_client import MCPToolClient
+import json
+from openenv import GenericEnvClient, GenericAction
 
-with MCPToolClient(base_url="http://localhost:8000").sync() as env:
-    env.reset()
+with GenericEnvClient("http://localhost:8000", message_timeout_s=60.0).sync() as env:
+    env.reset(seed=42)
 
     # View the inbox
-    inbox = env.call_tool("get_inbox")
-    print(inbox)
+    result = env.step(GenericAction(tool_name="get_inbox", arguments={}))
+    inbox = result.observation.get("result", result.observation)
+    print(json.dumps(inbox, indent=2))
 
-    # Read a message
-    msg = env.call_tool("read_message", message_id="msg_001")
-    print(msg)
-
-    # Respond to it
-    result = env.call_tool("respond_to_message",
-        message_id="msg_001",
-        response="Evacuating to Lincoln High School immediately with documents and medication.")
-    print(result)
+    # Respond to a message
+    result = env.step(GenericAction(
+        tool_name="respond_to_message",
+        arguments={
+            "message_id": "msg_001",
+            "response": "Evacuating to Lincoln High School immediately with documents and medication."
+        }
+    ))
+    print(f"Reward: {result.reward}, Done: {result.done}")
 
     # Advance time and check status
-    env.call_tool("advance_time", hours=4.0)
-    status = env.call_tool("get_status")
-    print(status)
+    env.step(GenericAction(tool_name="advance_time", arguments={"hours": 4.0}))
+    status = env.step(GenericAction(tool_name="get_status", arguments={}))
+    print(status.observation)
 ```
 
 ## Repository Structure
@@ -187,29 +188,26 @@ crisis-inbox/
 ├── models.py                           # Message data model (Channel, Urgency, Message)
 ├── messages.py                         # 116 pre-written messages across 48h timeline
 ├── drift_events.py                     # 9 schema drift events (3 fire per episode)
-├── client.py                           # MCPToolClient subclass
+├── client.py                           # GenericEnvClient helper
 ├── __init__.py                         # Package exports
 ├── server/
-│   ├── crisis_inbox_environment.py     # MCPEnvironment with timeline engine
-│   ├── rewards.py                      # Reward calculation logic
-│   ├── app.py                          # FastAPI app with MCPAction workaround
+│   ├── crisis_inbox_environment.py     # OpenEnv Environment with timeline engine & rewards
+│   ├── app.py                          # FastAPI app entry point
 │   ├── demo_ui.py                      # HTML scenario overview at /demo
 │   └── Dockerfile                      # HF Spaces deployment
 ├── notebooks/
-│   ├── crisisinbox_grpo_northflank.ipynb  # GRPO training (full fine-tuning, Northflank H100)
-│   └── crisisinbox_unsloth.ipynb          # GRPO training (Unsloth LoRA, Colab T4)
-├── generate_episodes.py                # Episode generator script
+│   └── crisisinbox_grpo_northflank.ipynb  # GRPO training (Unsloth LoRA)
 ├── pyproject.toml                      # Package config
 ├── openenv.yaml                        # OpenEnv environment spec
 ├── requirements.txt                    # Docker build dependencies
-└── ROADMAP.md                          # Hackathon timeline and progress
+└── demo.py                            # Interactive demo script
 ```
 
 ## Stack
 
-- **Environment:** OpenEnv 0.2.1 (MCPEnvironment + FastMCP)
+- **Environment:** OpenEnv 0.2.1 (Environment base class + GenericEnvClient)
 - **Deployment:** HF Spaces (Docker)
-- **Training:** HF TRL GRPO (full fine-tuning) + Unsloth GRPO (LoRA)
+- **Training:** Unsloth + HF TRL GRPO (LoRA, 2x speedup)
 - **Model:** Qwen2.5-0.5B-Instruct
 
 ## Team

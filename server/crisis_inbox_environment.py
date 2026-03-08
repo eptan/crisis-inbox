@@ -395,25 +395,30 @@ class CrisisInboxEnvironment(Environment):
         }
 
     def get_prompt(self) -> str:
-        """Get a formatted triage prompt for the current inbox state."""
+        """Get a formatted triage prompt for the current inbox state.
+
+        Only includes unhandled messages to keep prompts compact for small models.
+        Handled messages are summarized as a count.
+        """
         self._deliver_messages()
         hour = self._current_hour
         inbox = self._visible_messages
+        unhandled = [m for m in inbox if m.id not in self._handled]
+        handled_count = len(inbox) - len(unhandled)
 
         lines = [
             f"You are managing a crisis inbox during a natural disaster. It is hour {hour:.1f} of 48.",
-            f"You have {len(inbox)} messages. Unhandled messages need your attention.",
+            f"You have {len(unhandled)} unhandled messages ({handled_count} already handled).",
             "",
-            "INBOX:",
+            "UNHANDLED MESSAGES:",
             "=" * 60,
         ]
-        for msg in inbox:
-            status = "HANDLED" if msg.id in self._handled else "UNHANDLED"
+        for msg in unhandled:
             superseded = " [SUPERSEDED]" if msg.id in self._superseded else ""
             conflict = f" [CONFLICTS WITH {msg.conflicts_with}]" if msg.conflicts_with else ""
             deadline_str = f", deadline: hour {msg.deadline_hours}" if msg.deadline_hours else ""
             lines.append(
-                f"[{status}] {msg.id} | {msg.urgency.value.upper()} | "
+                f"{msg.id} | {msg.urgency.value.upper()} | "
                 f"From: {msg.sender} via {msg.channel.value} | "
                 f"\"{msg.subject}\"{deadline_str}{superseded}{conflict}"
             )
