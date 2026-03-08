@@ -6,7 +6,6 @@ __pycache__/
 *.egg-info/
 .episodes.json
 .sample_episodes.json
-notebooks/
 Dockerfile.notebook
 hf_readme.md
 ROADMAP.md
