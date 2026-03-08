@@ -13,14 +13,12 @@ RUN pip install --no-cache-dir \
     peft \
     huggingface_hub
 
-# Download training data from HF dataset
-RUN python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='eptan/crisis-inbox-episodes', filename='episodes.json', repo_type='dataset', local_dir='/app')"
-RUN mv /app/episodes.json /app/.episodes.json
-
 # Copy source files needed for training
 COPY generate_episodes.py models.py messages.py drift_events.py ./
 COPY notebooks/ ./notebooks/
 
 EXPOSE 8888
 
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
+# Download training data at startup (build env may block outbound network), then launch Jupyter
+CMD python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='eptan/crisis-inbox-episodes', filename='episodes.json', repo_type='dataset', local_dir='/app'); import os; os.rename('/app/episodes.json', '/app/.episodes.json')" && \
+    jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
