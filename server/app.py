@@ -75,6 +75,20 @@ app = create_app(
     env_name="crisis_inbox",
 )
 
+# Mount Gradio demo UI at /demo
+try:
+    import gradio as gr
+    from server.demo_ui import build_demo
+except ImportError:
+    try:
+        from .demo_ui import build_demo
+        import gradio as gr
+    except ImportError:
+        build_demo = None
+
+if build_demo is not None:
+    demo = build_demo()
+    app = gr.mount_gradio_app(app, demo, path="/demo")
 
 
 def main(host: str = "0.0.0.0", port: int = 8000):
