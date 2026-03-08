@@ -267,14 +267,17 @@ class CrisisInboxEnvironment(MCPEnvironment):
             ]
             for msg in inbox:
                 status = "HANDLED" if msg.id in self._handled else "UNHANDLED"
-                drift = " [POLICY CHANGE]" if msg.drift_flag else ""
+                # NOTE: drift_flag is intentionally NOT shown in the prompt.
+                # The agent must detect policy changes from message content
+                # (subjects say "UPDATED:", "EXPANDED:", etc.). The drift_flag
+                # is used only for reward scoring (+50% bonus).
                 superseded = " [SUPERSEDED]" if msg.id in self._superseded else ""
                 conflict = f" [CONFLICTS WITH {msg.conflicts_with}]" if msg.conflicts_with else ""
                 deadline_str = f", deadline: hour {msg.deadline_hours}" if msg.deadline_hours else ""
                 lines.append(
                     f"[{status}] {msg.id} | {msg.urgency.value.upper()} | "
                     f"From: {msg.sender} via {msg.channel.value} | "
-                    f"\"{msg.subject}\"{deadline_str}{drift}{superseded}{conflict}"
+                    f"\"{msg.subject}\"{deadline_str}{superseded}{conflict}"
                 )
             lines.extend([
                 "=" * 60,

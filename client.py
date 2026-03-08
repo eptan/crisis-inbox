@@ -55,13 +55,13 @@ def build_prompt(inbox: list[dict], hour: float) -> str:
     ]
     for msg in inbox:
         status = "HANDLED" if msg.get("handled") else "UNHANDLED"
-        drift = " [POLICY CHANGE]" if msg.get("drift_flag") else ""
+        # drift_flag intentionally not shown — agent must detect from content
         superseded = " [SUPERSEDED]" if msg.get("superseded") else ""
         deadline_str = f", deadline: hour {msg['deadline_hours']}" if msg.get("deadline_hours") else ""
         lines.append(
             f"[{status}] {msg['id']} | {msg['urgency'].upper()} | "
             f"From: {msg['sender']} via {msg['channel']} | "
-            f"\"{msg['subject']}\"{deadline_str}{drift}{superseded}"
+            f"\"{msg['subject']}\"{deadline_str}{superseded}"
         )
     lines.extend([
         "=" * 60,
