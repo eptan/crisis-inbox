@@ -24,38 +24,46 @@ CrisisInbox trains an agent to make those tradeoffs well.
 
 ## How It Works
 
-The agent manages a **48-hour post-disaster inbox** as a working parent in Sacramento during a hurricane. Messages arrive in real time from 19 senders across 6 channels. The agent must triage, respond, and adapt — while the rules keep changing underneath.
+The agent manages a **48-hour post-disaster inbox** as a working parent in Sacramento during a hurricane. Messages arrive in real time from 30+ senders across 6 channels. The agent must triage, respond, and adapt — while the rules keep changing underneath.
 
 ### Three Layers of Difficulty
 
-**1. Cognitive Overload** — 76 messages arrive over 48 hours. Reading costs time (6 min). Responding costs more (15 min). The agent can't handle everything — it must prioritize and let some things slide.
+**1. Cognitive Overload** — 116 messages arrive over 48 hours. Reading costs time (6 min). Responding costs more (15 min). The agent can't handle everything — it must prioritize and let some things slide.
 
-**2. Conflicting Obligations** — Your boss says come in. HR says take emergency leave. Your sister needs you to watch her kids. Mom wants you to drive to Tahoe. The evacuation shelter is full. There's no right answer, only better tradeoffs.
+**2. Conflicting Obligations** — Your boss says come in. HR says take emergency leave. Your sister needs you to watch her kids. Mom wants you to drive to Tahoe. The evacuation shelter is full. A wheelchair-bound neighbor is trapped. A baby down the street needs your generator. There's no right answer, only better tradeoffs.
 
-**3. Schema Drift** — Mid-episode, the rules change:
+**3. Scams & Misinformation** — Fake FEMA texts ask for your SSN. A contractor demands cash upfront. Social media says the dam is failing. The agent must recognize and deprioritize traps while acting on real emergencies.
+
+**4. Schema Drift** — Mid-episode, the rules change:
 - Insurance deadline shortened from 72h to 48h
 - Evacuation zone expands to include your workplace
 - Employer switches from "use PTO" to "5 days paid emergency leave"
 - Airline extends free rebooking from 48h to 7 days
 - FEMA adds new documentation requirements
+- Shelter closes due to structural damage — relocate immediately
+- County implements fuel rationing (odd/even plates)
+- Multiple pharmacies close — prescription transfers needed
+- Curfew extended from 9PM-6AM to 6PM-8AM due to looting
 
-Each episode randomly fires 3 of 5 drift events. The agent must detect changes and reprioritize.
+Each episode randomly fires 3 of 9 drift events. The agent must detect changes and reprioritize.
 
 ### Sender Profiles
 
 | Sender | Messages | Tone | Stakes |
 |--------|----------|------|--------|
-| Mom | 8 | Panicked, crying voicemails | Dad's heart medication, family safety |
-| Sister | 7 | Desperate, grateful | Kids stranded at school, childcare |
+| Mom | 10 | Panicked, crying voicemails | Dad's heart medication, family safety |
+| Sister | 9 | Desperate, grateful | Kids stranded at school, childcare |
 | Emma (niece, 7) | 3 | Kid texting style | Scared in the dark, rainbow drawings |
-| Boss (Greg) | 5 | Passive-aggressive, then softens | Career pressure vs. emergency |
-| Neighbor Dave | 8 | Casual bro, community | Cat rescue, looting, cleanup |
-| FEMA / NWS | 10 | Formal, information-dense | Evacuation orders, shelter locations |
-| State Farm | 5 | Corporate | Claim deadlines, documentation |
+| Boss (Greg) | 8 | Passive-aggressive, then softens | Career pressure vs. emergency |
+| Neighbor Dave | 15 | Casual bro, community | Cat rescue, looting, generator, cleanup |
+| Mrs. Chen (neighbor) | 3 | Frail, frightened | Wheelchair-bound, trapped by floodwater |
+| FEMA / NWS / County | 19 | Formal, information-dense | Evacuation, shelters, curfew, mold |
+| State Farm / GEICO | 9 | Corporate | Claim deadlines, vehicle damage |
+| Scam / Misinfo senders | 3 | Urgent, suspicious | Fake FEMA, phishing, price gouging |
 | Delta Airlines | 3 | Automated | Flight rebooking |
-| Oakwood Elementary | 3 | School admin | Closures, virtual learning |
-| HR Department | 3 | Policy updates | Leave policies |
-| + 9 others | 21 | Various | Pharmacy, landlord, utilities, etc. |
+| Oakwood Elementary | 5 | School admin | Closures, virtual learning, devices |
+| HR / EAP | 4 | Policy updates | Leave policies, crisis counseling |
+| + 14 others | 25 | Various | Pharmacy, landlord, mutual aid, church, legal aid, etc. |
 
 ### MCP Tools (Agent Actions)
 
@@ -82,7 +90,7 @@ An optimal agent responding to the critical evacuation alert at hour 0 earns 15 
 ### Episode Variation
 
 Each episode has:
-- 3 of 5 drift events randomly selected (seed-controlled)
+- 3 of 9 drift events randomly selected (seed-controlled)
 - +/-15% jitter on message arrival times
 - +/-10% jitter on deadlines
 - Dependency chains that gate actions (e.g., must handle sister's request before school pickup confirmation)
@@ -165,8 +173,8 @@ with CrisisInboxEnv(base_url="http://localhost:8000") as env:
 ```
 crisis-inbox/
 ├── models.py                           # Message data model (Channel, Urgency, Message)
-├── messages.py                         # 76 pre-written messages across 48h timeline
-├── drift_events.py                     # 5 schema drift events (3 fire per episode)
+├── messages.py                         # 116 pre-written messages across 48h timeline
+├── drift_events.py                     # 9 schema drift events (3 fire per episode)
 ├── client.py                           # MCPToolClient subclass
 ├── __init__.py                         # Package exports
 ├── server/

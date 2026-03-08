@@ -24,7 +24,7 @@ class CrisisInboxEnv(MCPToolClient):
     - step(action): Execute an action
 
     Example:
-        >>> with CrisisInboxEnv(base_url="http://localhost:8000").sync() as env:
+        >>> with CrisisInboxEnv(base_url="http://localhost:8000") as env:
         ...     env.reset()
         ...     tools = env.list_tools()
         ...     inbox = env.call_tool("get_inbox")
@@ -99,7 +99,7 @@ def collect_episode(
 
     with MCPToolClient(
         base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0,
-    ).sync() as env:
+    ) as env:
         env.reset(seed=seed)
         decision_points = []
         current_hour = 0.0
@@ -222,7 +222,7 @@ def evaluate_on_live_env(
     """
     with MCPToolClient(
         base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0,
-    ).sync() as env:
+    ) as env:
         env.reset(seed=seed)
         total_reward = 0.0
         actions_taken = []

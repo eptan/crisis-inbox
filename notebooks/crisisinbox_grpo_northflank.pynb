@@ -45,7 +45,7 @@
   {
    "cell_type": "code",
    "id": "pmbt9gcp9hb",
-   "source": "import json\nimport time as _time\nfrom openenv.core.mcp_client import MCPToolClient\n\nBASE_URL = \"https://eptan-crisis-inbox.hf.space\"\n\n# Wake up the HF Space (may be sleeping) and verify connectivity\nprint(\"Connecting to HF Space (may take a moment if cold-starting)...\")\nfor attempt in range(3):\n    try:\n        with MCPToolClient(base_url=BASE_URL, connect_timeout_s=60.0) as env:\n            env.reset(seed=0)\n            tools = env.list_tools()\n            print(f\"Connected! Available tools: {[t.name for t in tools]}\")\n            for t in tools:\n                print(f\"  - {t.name}: {t.description[:80]}...\")\n\n            status = json.loads(env.call_tool(\"get_status\"))\n            print(f\"\\nEnvironment ready \u2014 {status['messages_total_arrived']} messages at hour {status['current_hour']}\")\n        break\n    except Exception as e:\n        if attempt < 2:\n            print(f\"  Attempt {attempt + 1} failed ({e}), retrying in 10s...\")\n            _time.sleep(10)\n        else:\n            raise RuntimeError(f\"Could not connect to {BASE_URL} after 3 attempts: {e}\")",
+   "source": "import json\nimport time as _time\nfrom openenv.core.mcp_client import MCPToolClient\n\nBASE_URL = \"https://eptan-crisis-inbox.hf.space\"\n\n# Wake up the HF Space (may be sleeping) and verify connectivity\nprint(\"Connecting to HF Space (may take a moment if cold-starting)...\")\nfor attempt in range(3):\n    try:\n        with MCPToolClient(base_url=BASE_URL, connect_timeout_s=60.0).sync() as env:\n            env.reset(seed=0)\n            tools = env.list_tools()\n            print(f\"Connected! Available tools: {[t.name for t in tools]}\")\n            for t in tools:\n                print(f\"  - {t.name}: {t.description[:80]}...\")\n\n            status = json.loads(env.call_tool(\"get_status\"))\n            print(f\"\\nEnvironment ready \u2014 {status['messages_total_arrived']} messages at hour {status['current_hour']}\")\n        break\n    except Exception as e:\n        if attempt < 2:\n            print(f\"  Attempt {attempt + 1} failed ({e}), retrying in 10s...\")\n            _time.sleep(10)\n        else:\n            raise RuntimeError(f\"Could not connect to {BASE_URL} after 3 attempts: {e}\")",
    "metadata": {},
    "execution_count": null,
    "outputs": []
@@ -66,7 +66,7 @@
     "\n",
     "    with MCPToolClient(\n",
     "        base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0,\n",
-    "    ) as env:\n",
+    "    ).sync() as env:\n",
     "        env.reset(seed=seed)\n",
     "        decision_points = []\n",
     "        current_hour = 0.0\n",
@@ -266,7 +266,7 @@
     "\n",
     "def evaluate_on_live_env(model, tokenizer, base_url, seed, max_steps=20):\n",
     "    \"\"\"Evaluate model against the live environment using OpenEnv step() flow.\"\"\"\n",
-    "    with MCPToolClient(base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0) as env:\n",
+    "    with MCPToolClient(base_url=base_url, connect_timeout_s=60.0, message_timeout_s=120.0).sync() as env:\n",
     "        env.reset(seed=seed)\n",
     "        total_reward = 0.0\n",
     "        actions_taken = []\n",
