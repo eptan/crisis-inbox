@@ -1,3 +1,12 @@
+---
+title: CrisisInbox
+emoji: 📱
+colorFrom: red
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
 # CrisisInbox
 
 A reinforcement learning environment built on [OpenEnv 0.2.1](https://github.com/OpenEnvs/OpenEnv) for training language models to manage personal task overload during natural disasters.
@@ -86,6 +95,17 @@ with CrisisInboxEnv(base_url="https://eptan-crisis-inbox.hf.space") as env:
     env.reset()
     inbox = env.call_tool("get_inbox")
     print(inbox)
+```
+
+## Deployment
+
+```bash
+# Deploy to HF Spaces via OpenEnv CLI
+pip install openenv-core[core]
+openenv push -r eptan/crisis-inbox
+
+# Or run locally
+uvicorn server.app:app --host 0.0.0.0 --port 8000
 ```
 
 ## Local Development
