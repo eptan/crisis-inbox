@@ -24,7 +24,7 @@ CrisisInbox trains an agent to make those tradeoffs well.
 
 ## How It Works
 
-The agent manages a **48-hour post-disaster inbox** as a working parent in Sacramento during a hurricane. Messages arrive in real time from 30+ senders across 6 channels. The agent must triage, respond, and adapt — while the rules keep changing underneath.
+The agent manages a **48-hour post-disaster inbox** as a working parent in Sacramento during a hurricane. 116 messages arrive in real time from 30+ senders across 6 channels. The agent must triage, respond, and adapt — while the rules keep changing underneath.
 
 ### Three Layers of Difficulty
 
@@ -45,7 +45,7 @@ The agent manages a **48-hour post-disaster inbox** as a working parent in Sacra
 - Multiple pharmacies close — prescription transfers needed
 - Curfew extended from 9PM-6AM to 6PM-8AM due to looting
 
-Each episode randomly fires 3 of 9 drift events. The agent must detect changes and reprioritize.
+Each episode randomly fires 3 of 9 drift events. The agent receives no explicit flag — it must detect changes from message content alone and reprioritize.
 
 ### Sender Profiles
 
@@ -74,18 +74,19 @@ Each episode randomly fires 3 of 9 drift events. The agent must detect changes a
 | `respond_to_message` | 0.25h | Take action on a message (earns reward) |
 | `get_status` | 0h | View time, score, deadlines, drift events |
 | `advance_time` | 0.5-4h | Skip forward (new messages may arrive) |
+| `get_prompt` | 0h | Get formatted prompt for LLM training |
 
 ### Reward Function
 
 | Signal | Weight | Mechanic |
 |--------|--------|----------|
+| **Format compliance** | 0-2 | Graduated credit for parseable output structure |
 | **Urgency base** | 1-10 | Critical=10, High=5, Medium=3, Low=1 |
 | **Deadline timing** | x0.25 to x1.5 | Earlier response = bigger bonus; late = 75% penalty |
-| **Drift adaptation** | x1.5 | Bonus for handling drift-flagged messages |
+| **Drift adaptation** | x1.5 | Bonus for handling drift messages (detected from content) |
 | **Stale info penalty** | x0.5 | Penalty for acting on superseded information |
 | **Response quality** | x0.5 | Penalty for very short/empty responses |
-
-An optimal agent responding to the critical evacuation alert at hour 0 earns 15 points. The same response at hour 10 (after the 6h deadline) earns only 2.5.
+| **Prioritization** | x0.3 | Penalty for choosing low when critical exists |
 
 ### Episode Variation
 
@@ -98,13 +99,24 @@ Each episode has:
 ## Quick Start (Hosted)
 
 ```python
-from crisis_inbox import CrisisInboxEnv
+from openenv.core.mcp_client import MCPToolClient
 
-with CrisisInboxEnv(base_url="https://eptan-crisis-inbox.hf.space") as env:
-    env.reset()
+with MCPToolClient(base_url="https://eptan-crisis-inbox.hf.space").sync() as env:
+    env.reset(seed=42)
     inbox = env.call_tool("get_inbox")
     print(inbox)
 ```
+
+## Training
+
+Two training notebooks are provided, both connecting to the live HF Space environment:
+
+| Notebook | Stack | Approach |
+|----------|-------|----------|
+| `notebooks/crisisinbox_grpo_northflank.ipynb` | HF TRL + GRPO | Full fine-tuning (no LoRA) |
+| `notebooks/crisisinbox_unsloth.ipynb` | Unsloth + GRPO | LoRA with 2x Unsloth speedup |
+
+Both train Qwen2.5-0.5B-Instruct with GRPO using a multi-component reward function that bootstraps format compliance first, then optimizes triage quality.
 
 ## Deployment
 
@@ -143,9 +155,9 @@ uvicorn server.app:app --host 0.0.0.0 --port 8000
 Test with the client:
 
 ```python
-from crisis_inbox import CrisisInboxEnv
+from openenv.core.mcp_client import MCPToolClient
 
-with CrisisInboxEnv(base_url="http://localhost:8000") as env:
+with MCPToolClient(base_url="http://localhost:8000").sync() as env:
     env.reset()
 
     # View the inbox
@@ -179,11 +191,13 @@ crisis-inbox/
 ├── __init__.py                         # Package exports
 ├── server/
 │   ├── crisis_inbox_environment.py     # MCPEnvironment with timeline engine
+│   ├── rewards.py                      # Reward calculation logic
 │   ├── app.py                          # FastAPI app with MCPAction workaround
+│   ├── demo_ui.py                      # HTML scenario overview at /demo
 │   └── Dockerfile                      # HF Spaces deployment
 ├── notebooks/
-│   └── crisisinbox_grpo_simple.ipynb   # GRPO training notebook (Colab)
-├── .episodes.json                      # Pre-generated training episodes (gitignored)
+│   ├── crisisinbox_grpo_northflank.ipynb  # GRPO training (full fine-tuning, Northflank H100)
+│   └── crisisinbox_unsloth.ipynb          # GRPO training (Unsloth LoRA, Colab T4)
 ├── generate_episodes.py                # Episode generator script
 ├── pyproject.toml                      # Package config
 ├── openenv.yaml                        # OpenEnv environment spec
@@ -195,16 +209,8 @@ crisis-inbox/
 
 - **Environment:** OpenEnv 0.2.1 (MCPEnvironment + FastMCP)
 - **Deployment:** HF Spaces (Docker)
-- **Training:** Unsloth GRPO via Google Colab
+- **Training:** HF TRL GRPO (full fine-tuning) + Unsloth GRPO (LoRA)
 - **Model:** Qwen2.5-0.5B-Instruct
-
-### GRPO training (Colab)
-
-Open the notebook with the latest fixes (context length, reward signature, left-padding, batch size) in Google Colab (T4 GPU runtime):
-
-**[Open in Colab](https://colab.research.google.com/github/eptan/crisis-inbox/blob/main/notebooks/crisisinbox_grpo_simple.ipynb)**
-
-Push your local changes to the `main` branch so the link above serves the updated notebook.
 
 ## Team
 
