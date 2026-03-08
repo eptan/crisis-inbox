@@ -82,7 +82,7 @@ class CrisisInboxEnvironment(MCPEnvironment):
             """
             View all messages currently in the inbox.
             Returns a JSON list of message summaries (id, sender, subject, urgency,
-            channel, timestamp, deadline, handled status, drift_flag).
+            channel, timestamp, deadline, handled status).
             Only shows messages that have arrived by the current time.
             """
             self._deliver_messages()
@@ -99,7 +99,6 @@ class CrisisInboxEnvironment(MCPEnvironment):
                     "deadline_hours": msg.deadline_hours,
                     "handled": msg.id in self._handled,
                     "read": msg.id in self._read_msgs,
-                    "drift_flag": msg.drift_flag,
                     "superseded": is_superseded,
                     "conflicts_with": msg.conflicts_with,
                 })
@@ -122,7 +121,7 @@ class CrisisInboxEnvironment(MCPEnvironment):
                 if msg.id == message_id:
                     self._read_msgs.add(message_id)
                     self._advance_clock(0.1)
-                    result = msg.model_dump()
+                    result = msg.model_dump(exclude={"drift_flag"})
                     result["current_hour"] = self._current_hour
                     if msg.id in self._superseded:
                         result["WARNING"] = (
