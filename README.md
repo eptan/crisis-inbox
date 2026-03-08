@@ -100,11 +100,19 @@ with CrisisInboxEnv(base_url="https://eptan-crisis-inbox.hf.space") as env:
 ## Deployment
 
 ```bash
-# Deploy to HF Spaces via OpenEnv CLI
-pip install openenv-core[core]
-openenv push -r eptan/crisis-inbox
+# 1. Create and activate a virtual environment
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e .
 
-# Or run locally
+# 2. Deploy to HF Spaces via OpenEnv CLI
+openenv push -r eptan/crisis-inbox
+```
+
+Or run locally:
+
+```bash
+source .venv/bin/activate
 uvicorn server.app:app --host 0.0.0.0 --port 8000
 ```
 
