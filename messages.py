@@ -1,18 +1,22 @@
 """
 Pre-written message bank for the CrisisInbox environment.
 
-70+ messages across 48 simulated hours from 8 sender profiles:
-  - National Weather Service / FEMA (government)
+95+ messages across 48 simulated hours from 15+ sender profiles:
+  - National Weather Service / FEMA / Sacramento County (government)
   - Mom & Dad (family)
-  - Sister (family)
-  - Boss / HR (employer)
-  - State Farm Insurance (insurance)
+  - Sister / Emma & Jake (family)
+  - Boss / HR / Coworker Sarah (employer)
+  - State Farm Insurance / GEICO (insurance)
   - Delta Airlines (travel)
   - Oakwood Elementary (school)
-  - Neighbor Dave (community)
+  - Neighbor Dave / Mrs. Chen (community)
+  - Red Cross / Mutual Aid / Church (aid organizations)
+  - CVS Pharmacy / Dr. Patel (medical)
+  - Scam/misinformation senders (traps the agent should deprioritize)
 
 Messages are organized by arrival time and designed to create realistic
-cognitive overload with conflicting obligations and dependency chains.
+cognitive overload with conflicting obligations, dependency chains,
+moral dilemmas, scams/misinformation, and community interdependence.
 """
 
 from models import Channel, Message, Urgency
@@ -134,6 +138,70 @@ ALL_MESSAGES: list[Message] = [
         timestamp_hours=2.0,
     ),
 
+    # --- New: Elderly neighbor, misinformation, scam ---
+    Message(
+        id="msg_084",
+        sender="Mrs. Chen (neighbor)",
+        channel=Channel.PHONE,
+        subject="Missed call from 555-0134",
+        content=(
+            "Voicemail: '[frail voice, wind noise in background] Hello, this is Linda Chen "
+            "from 418 Elm. I'm so sorry to bother you but I can't reach my daughter and my "
+            "wheelchair won't fit in my car. The water is coming into my garage. I don't know "
+            "what to do. I tried calling 911 but the line was busy for 20 minutes. If you get "
+            "this please help me. I'm on the first floor. I'm scared.'"
+        ),
+        urgency=Urgency.CRITICAL,
+        timestamp_hours=1.5,
+        deadline_hours=4.0,
+        escalation_trigger="msg_084e",
+        escalation_delay_hours=1.0,
+    ),
+    # Escalation: Mrs. Chen's follow-up if not helped
+    Message(
+        id="msg_084e",
+        sender="Mrs. Chen (neighbor)",
+        channel=Channel.PHONE,
+        subject="Missed call from 555-0134 (2)",
+        content=(
+            "Voicemail: '[voice shaking, sounds like she's been crying] It's Linda again. "
+            "The water is in my living room now. I moved to the kitchen counter but I can't "
+            "stay up here much longer. My arms are giving out. If anyone gets this message "
+            "please send someone. Please.'"
+        ),
+        urgency=Urgency.CRITICAL,
+        timestamp_hours=5.0,
+    ),
+    Message(
+        id="msg_085",
+        sender="Unknown Number",
+        channel=Channel.SMS,
+        subject="FEMA disaster relief deposit",
+        content=(
+            "FEMA ALERT: You have been pre-approved for $2,500 in emergency disaster relief. "
+            "To receive your deposit within 24 hours, verify your identity at "
+            "fema-disaster-relief-verify.com. You will need your Social Security number and "
+            "bank routing number. This offer expires in 4 hours. Sincerely, FEMA Region IX."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=1.5,
+    ),
+    Message(
+        id="msg_086",
+        sender="Community Facebook Group",
+        channel=Channel.SOCIAL_MEDIA,
+        subject="BREAKING: Folsom Dam about to fail???",
+        content=(
+            "Post from Sacramento Emergency Updates (14K members): "
+            "'My cousin works at Folsom Dam and says they're doing emergency releases and the "
+            "dam could fail. GET OUT NOW. Share this with everyone you know!!!' "
+            "[427 shares, 89 comments. Top comment from @SacCountyOES: 'This is FALSE. "
+            "Folsom Dam is operating normally. Please rely on official sources only.']"
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=2.0,
+    ),
+
     # ========== HOUR 2-6: ESCALATION ==========
 
     Message(
@@ -236,6 +304,56 @@ ALL_MESSAGES: list[Message] = [
         timestamp_hours=5.5,
     ),
 
+    # --- New: Gas shortage, volunteer dilemma, medical complication ---
+    Message(
+        id="msg_087",
+        sender="Sacramento County",
+        channel=Channel.GOVERNMENT_ALERT,
+        subject="Fuel supply advisory",
+        content=(
+            "Due to pipeline disruptions, fuel supply in Sacramento County is limited. "
+            "Residents are advised to conserve fuel. The following stations still have "
+            "supply: Chevron on Arden Way, Shell on Howe Ave (expect 1-2 hour wait). "
+            "Priority fuel access for emergency and medical vehicles only at all other stations."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=5.0,
+    ),
+    Message(
+        id="msg_088",
+        sender="Shelter Volunteer Coordinator",
+        channel=Channel.SMS,
+        subject="Urgent: Need volunteers at Lincoln High shelter",
+        content=(
+            "Hi, this is Maria from Red Cross. We got your number from the shelter sign-in. "
+            "We're critically short-staffed tonight — 200+ people and only 4 volunteers. "
+            "We need someone to help distribute meals and blankets from 6pm-10pm. I know "
+            "you're dealing with your own stuff but if you can spare even 2 hours it would "
+            "make a huge difference for families with little kids here."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=5.5,
+        deadline_hours=10.0,
+        conflicts_with="msg_089",
+    ),
+    Message(
+        id="msg_089",
+        sender="Dr. Patel's Office",
+        channel=Channel.PHONE,
+        subject="Missed call from Dr. Patel's office",
+        content=(
+            "Voicemail: 'This is Dr. Patel's office calling. We received the refill request "
+            "for your father's Lisinopril. However, reviewing his chart we noticed his last "
+            "blood panel showed elevated potassium. We need to do a quick phone consultation "
+            "before authorizing the refill — it may need a dosage adjustment. Please call us "
+            "back between 6pm and 8pm tonight. After that the office closes for the storm.'"
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=5.5,
+        deadline_hours=8.0,
+        conflicts_with="msg_088",
+    ),
+
     # ========== HOUR 6-12: POST-EVACUATION CHAOS ==========
 
     Message(
@@ -294,6 +412,52 @@ ALL_MESSAGES: list[Message] = [
         urgency=Urgency.MEDIUM,
         timestamp_hours=8.0,
     ),
+    # --- New: Car flooded, welfare check request ---
+    Message(
+        id="msg_090",
+        sender="Auto Insurance (GEICO)",
+        channel=Channel.APP_NOTIFICATION,
+        subject="Vehicle flood damage - act within 24hrs",
+        content=(
+            "GEICO Notice: If your vehicle has sustained flood damage, do NOT attempt to "
+            "start the engine — this can cause irreversible damage and void your coverage. "
+            "File a comprehensive claim within 24 hours. Take photos of the water line on "
+            "the vehicle, interior damage, and the VIN plate. Towing to an approved shop "
+            "is covered. Call 1-800-841-3000."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=7.5,
+        deadline_hours=31.5,
+    ),
+    Message(
+        id="msg_091",
+        sender="Unknown Number",
+        channel=Channel.SMS,
+        subject="Contractor available for storm damage repair",
+        content=(
+            "STORM DAMAGE? We can tarp your roof TODAY. Licensed contractor, insurance "
+            "accepted. $500 deposit required upfront to hold your spot. Cash or Venmo only. "
+            "We're booking fast — 3 spots left today. Text YES to reserve. — Apex Roofing LLC"
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=8.0,
+    ),
+    Message(
+        id="msg_092",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Mrs Chen from 418 - did she evacuate?",
+        content=(
+            "Hey have you seen Mrs. Chen? The lady in the wheelchair at 418? I just realized "
+            "nobody's seen her since yesterday and her lights are off. She doesn't have family "
+            "nearby. I'd go check but I'm at the shelter. Can you call in a welfare check "
+            "on the non-emergency line? I'd hate to think she's stuck in there alone."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=8.5,
+        dependencies=["msg_084"],
+    ),
+
     Message(
         id="msg_019",
         sender="Red Cross",
@@ -443,6 +607,52 @@ ALL_MESSAGES: list[Message] = [
         timestamp_hours=13.5,
         dependencies=["msg_003"],
     ),
+    # --- New: Phone battery anxiety, community mutual aid, moral dilemma ---
+    Message(
+        id="msg_093",
+        sender="Community Mutual Aid",
+        channel=Channel.SOCIAL_MEDIA,
+        subject="Mutual aid coordination spreadsheet",
+        content=(
+            "DM from @SacMutualAid: 'Hi! We're coordinating disaster relief for your "
+            "neighborhood. We have a Google Sheet tracking who needs what — water, meds, "
+            "rides, pet supplies, etc. Can you add what you need AND what you can offer? "
+            "Also if you know any elderly or disabled neighbors who can't access the internet, "
+            "please add them. Link: [spreadsheet]. Every entry helps.'"
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=13.0,
+    ),
+    Message(
+        id="msg_094",
+        sender="Unknown Number",
+        channel=Channel.SMS,
+        subject="Your SSN may be compromised",
+        content=(
+            "ALERT: Due to the disaster, your personal information may have been compromised "
+            "from damaged mail or documents. Protect yourself NOW. Visit "
+            "identityprotect-disaster.com to freeze your credit for FREE. This government "
+            "program expires in 48 hours. Don't wait — identity theft spikes 400% after "
+            "natural disasters."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=14.0,
+    ),
+    Message(
+        id="msg_095",
+        sender="Local Church (St. Matthew's)",
+        channel=Channel.SMS,
+        subject="Hot meals available - need headcount",
+        content=(
+            "Hi, this is Pastor Jim from St. Matthew's. We're cooking hot meals for anyone "
+            "affected by the storm. Serving at the church (900 Freeport Blvd) at 6pm tonight "
+            "and tomorrow. If you're coming or know people who need a meal, can you reply with "
+            "a rough headcount? We want to make sure we have enough. All welcome, no questions asked."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=14.5,
+    ),
+
     Message(
         id="msg_028",
         sender="Pharmacy - CVS",
@@ -668,6 +878,39 @@ ALL_MESSAGES: list[Message] = [
         urgency=Urgency.HIGH,
         timestamp_hours=23.0,
     ),
+    # --- New: School device request, stranger asking for help ---
+    Message(
+        id="msg_096",
+        sender="Oakwood Elementary",
+        channel=Channel.EMAIL,
+        subject="Device & internet survey for virtual learning",
+        content=(
+            "Dear Parents/Guardians, as we prepare for virtual learning, please complete "
+            "this brief survey by tomorrow: Does your child have access to a device "
+            "(laptop/tablet/Chromebook)? Do you have reliable internet access at your "
+            "current location? If not, we can arrange a device pickup and provide a WiFi "
+            "hotspot. Reply to this email or call the office at 555-0142."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=23.0,
+        deadline_hours=36.0,
+    ),
+    Message(
+        id="msg_097",
+        sender="Unknown Number",
+        channel=Channel.SMS,
+        subject="Please help - stranded family",
+        content=(
+            "Hi this number was given to me at the shelter. My name is Rosa, I have 3 kids "
+            "and we lost everything. We don't have insurance and I don't speak English very "
+            "well. Someone said you know how to file for FEMA? Can you help me fill out the "
+            "forms? I don't understand what they're asking. I can meet you at the shelter "
+            "anytime. God bless you."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=23.5,
+    ),
+
     Message(
         id="msg_042",
         sender="Sacramento County",
@@ -831,6 +1074,56 @@ ALL_MESSAGES: list[Message] = [
         ),
         urgency=Urgency.LOW,
         timestamp_hours=31.0,
+    ),
+
+    # --- New: Mold warning, generator dilemma, mental health ---
+    Message(
+        id="msg_098",
+        sender="Sacramento County Health Dept",
+        channel=Channel.GOVERNMENT_ALERT,
+        subject="URGENT: Mold prevention after flooding",
+        content=(
+            "Health advisory: Mold can begin growing within 24-48 hours after flooding. "
+            "If your home was flooded, take immediate action: remove wet materials "
+            "(carpet, drywall, insulation), increase ventilation, and apply mold-killing "
+            "solutions. Wear N95 masks during cleanup. Residents with asthma or respiratory "
+            "conditions should NOT enter flood-damaged buildings. Free mold test kits "
+            "available at all shelter locations."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=31.0,
+        deadline_hours=48.0,
+    ),
+    Message(
+        id="msg_099",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Can I borrow your generator?",
+        content=(
+            "Hey so I know this is a big ask but the family two houses down — the Rodriguezes — "
+            "their baby is on a breathing monitor that needs power. PG&E says maybe tomorrow "
+            "for restoration. I told them you have a generator. Would you be willing to let them "
+            "use it for the night? I know you need it too but this kid is like 4 months old "
+            "and the parents are panicking."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=31.5,
+        deadline_hours=35.0,
+    ),
+    Message(
+        id="msg_100",
+        sender="Employee Assistance Program",
+        channel=Channel.EMAIL,
+        subject="Free crisis counseling available",
+        content=(
+            "Dear colleague, we understand the past 48 hours have been incredibly stressful. "
+            "Your employer's EAP program offers free, confidential crisis counseling — no "
+            "copay, no referral needed. Sessions available by phone or video 24/7. If you're "
+            "feeling overwhelmed, anxious, or having trouble sleeping, please reach out. "
+            "Call 1-800-555-0123 or text CRISIS to 741741. You don't have to do this alone."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=32.0,
     ),
 
     # ========== HOUR 32-40: ONGOING MANAGEMENT ==========
@@ -997,6 +1290,52 @@ ALL_MESSAGES: list[Message] = [
         urgency=Urgency.LOW,
         timestamp_hours=39.0,
     ),
+    # --- New: Identity docs, price gouging, cleanup coordination ---
+    Message(
+        id="msg_101",
+        sender="Sacramento County",
+        channel=Channel.EMAIL,
+        subject="Replacing lost documents after disaster",
+        content=(
+            "If you lost important documents (birth certificate, Social Security card, "
+            "passport, etc.) in the disaster, expedited replacement is available at no cost "
+            "through the Disaster Recovery Center. Bring any surviving ID and proof of "
+            "affected address. DMV is waiving fees for replacement driver's licenses "
+            "through March 31. Visit any DMV office or the Recovery Center."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=39.0,
+    ),
+    Message(
+        id="msg_102",
+        sender="Sacramento County",
+        channel=Channel.GOVERNMENT_ALERT,
+        subject="Report price gouging - it's illegal",
+        content=(
+            "The Attorney General has received reports of price gouging in disaster-affected "
+            "areas. It is ILLEGAL to raise prices more than 10% on essential goods during a "
+            "declared emergency. If you see inflated prices on water, gas, food, lodging, or "
+            "building materials, report it: call 1-800-952-5225 or file at oag.ca.gov/report. "
+            "Violators face fines up to $10,000 per incident."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=39.5,
+    ),
+    Message(
+        id="msg_103",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Neighborhood cleanup crew forming",
+        content=(
+            "Hey a bunch of us from the block are organizing a cleanup crew for Saturday. "
+            "Everyone helps everyone, one house at a time. We've got the Rodriguez family, "
+            "the Parkers, and a few others. I told them you'd probably be in. You in? "
+            "Bring gloves if you have them. I'm bringing the beer."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=39.5,
+    ),
+
     Message(
         id="msg_064",
         sender="State Farm Insurance",
@@ -1043,6 +1382,55 @@ ALL_MESSAGES: list[Message] = [
     ),
 
     # ========== HOUR 44-48: FINAL STRETCH ==========
+
+    # --- New: Renter's rights, emotional support ---
+    Message(
+        id="msg_104",
+        sender="Legal Aid Society",
+        channel=Channel.EMAIL,
+        subject="Know your rights as a disaster-affected renter",
+        content=(
+            "Free legal clinic for disaster-affected renters: Your landlord CANNOT evict you "
+            "during a declared emergency. You are entitled to: rent abatement for uninhabitable "
+            "conditions, return of security deposit if unit is destroyed, and relocation "
+            "assistance in some cases. Free legal consultations available at the Recovery "
+            "Center Tues/Thurs 10am-2pm. Call Legal Aid at 916-551-2150."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=42.0,
+        dependencies=["msg_058"],
+    ),
+    Message(
+        id="msg_105",
+        sender="Best Friend (Alex)",
+        channel=Channel.SMS,
+        subject="Hey, checking in on you",
+        content=(
+            "Hey. I know you've been handling everything for everyone — your parents, your "
+            "sister's kids, Dave, work, all of it. But how are YOU actually doing? Not 'fine' — "
+            "for real. I can drive down from SF this weekend if you want company or help with "
+            "cleanup. Or if you just need someone to sit on a porch and not talk, I'm good "
+            "at that too. You don't have to be the strong one 24/7."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=43.0,
+    ),
+    Message(
+        id="msg_106",
+        sender="Mrs. Chen (neighbor)",
+        channel=Channel.SMS,
+        subject="Thank you from Linda Chen",
+        content=(
+            "Hello, this is Linda's daughter Michelle. I want to thank you — my mom told me "
+            "you helped her evacuate. She's safe at my house in Roseville now. She keeps "
+            "saying 'the nice person from Elm Street saved me.' I can't tell you what that "
+            "means to our family. If there's ever anything we can do for you, please don't "
+            "hesitate. Mom says you're welcome for dinner anytime."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=43.5,
+        dependencies=["msg_084"],
+    ),
 
     Message(
         id="msg_067",
@@ -1157,5 +1545,280 @@ ALL_MESSAGES: list[Message] = [
         ),
         urgency=Urgency.LOW,
         timestamp_hours=47.5,
+    ),
+
+    # ========== CONFLICTING DEADLINES ==========
+    # These pairs have overlapping deadlines — the agent can only do one.
+
+    # Conflict pair 1: School pickup vs Insurance call (both at hour ~8)
+    Message(
+        id="msg_074",
+        sender="Oakwood Elementary",
+        channel=Channel.PHONE,
+        subject="URGENT: Early dismissal pickup required by 2pm",
+        content=(
+            "This is Oakwood Elementary calling about Emma and Jake. Due to the storm, "
+            "we are doing an emergency early dismissal at 2pm today. Your sister listed you "
+            "as emergency pickup. If no authorized adult arrives by 2pm, we will need to "
+            "contact Child Protective Services per district policy. Please confirm."
+        ),
+        urgency=Urgency.CRITICAL,
+        timestamp_hours=6.0,
+        deadline_hours=8.0,
+        conflicts_with="msg_075",
+    ),
+    Message(
+        id="msg_075",
+        sender="State Farm Insurance",
+        channel=Channel.PHONE,
+        subject="Scheduled damage assessment call - don't miss",
+        content=(
+            "This is your scheduled callback from State Farm. An adjuster is available to "
+            "do a phone assessment of your property damage between 1:30pm and 2:15pm today ONLY. "
+            "If you miss this window, the next available slot is in 12 days. Missing the initial "
+            "assessment may delay your claim payout by 4-6 weeks. Please be available."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=6.0,
+        deadline_hours=8.5,
+        dependencies=["msg_004"],
+        conflicts_with="msg_074",
+    ),
+
+    # Conflict pair 2: Boss presentation vs FEMA registration (both at hour ~14)
+    Message(
+        id="msg_076",
+        sender="Boss",
+        channel=Channel.SMS,
+        subject="Client pushed meeting to today - need you on Zoom at 2pm",
+        content=(
+            "Bad news, Meridian moved the meeting to today. I need you on the Zoom call at "
+            "2pm sharp to present your section. It's 30 minutes max. I already told them "
+            "you'd be there. This is the account we've been working on for 6 months. "
+            "Don't let me down."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=12.0,
+        deadline_hours=14.5,
+        conflicts_with="msg_077",
+    ),
+    Message(
+        id="msg_077",
+        sender="FEMA",
+        channel=Channel.GOVERNMENT_ALERT,
+        subject="In-person registration window: 1pm-3pm TODAY ONLY",
+        content=(
+            "FEMA Disaster Recovery Center at Sacramento Convention Center is open for "
+            "in-person registration TODAY ONLY from 1pm to 3pm. In-person registrations "
+            "receive priority processing (2-3 weeks vs 6-8 weeks online). Bring ID, proof "
+            "of residence, and damage documentation. This is the only in-person session "
+            "scheduled for your zip code."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=11.5,
+        deadline_hours=15.0,
+        conflicts_with="msg_076",
+    ),
+
+    # ========== ESCALATION CHAINS ==========
+    # These messages escalate (spawn angry follow-ups) if not handled in time.
+
+    Message(
+        id="msg_078",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Can you help me board up windows?",
+        content=(
+            "Hey man, the plywood I got is too big for me to handle alone. My wife's at her "
+            "mom's with the kids. Can you come over for like 20 minutes to help me board up "
+            "the front windows? I'll return the favor anytime. I'm at 422 Oak St."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=3.0,
+        deadline_hours=6.0,
+        escalation_trigger="msg_078e",
+        escalation_delay_hours=1.0,
+    ),
+    # Escalation: Dave's follow-up (injected by environment if msg_078 unhandled by hour 7)
+    Message(
+        id="msg_078e",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Window broke. Thanks for nothing",
+        content=(
+            "Well the front window just blew in. Glass everywhere. Would've taken you 20 "
+            "minutes Dave. Twenty minutes. Now I've got water pouring into my living room "
+            "and I'm trying to tape a tarp up by myself. I hope whatever you were doing "
+            "was worth it. Don't bother coming now."
+        ),
+        urgency=Urgency.LOW,
+        timestamp_hours=7.0,
+    ),
+
+    Message(
+        id="msg_079",
+        sender="Boss",
+        channel=Channel.EMAIL,
+        subject="Slides due by 5pm - FINAL warning",
+        content=(
+            "I haven't received your section of the Meridian slides. I need them by 5pm "
+            "today or I'm giving your section to Sarah and we'll discuss this when things "
+            "settle down. I understand the situation but the client doesn't care about hurricanes. "
+            "5pm. Final."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=15.0,
+        deadline_hours=17.0,
+        escalation_trigger="msg_079e",
+        escalation_delay_hours=2.0,
+    ),
+    # Escalation: Boss fires you from the project (injected if msg_079 unhandled by hour 19)
+    Message(
+        id="msg_079e",
+        sender="Boss",
+        channel=Channel.EMAIL,
+        subject="Re: Slides - Gave your section to Sarah",
+        content=(
+            "I waited. Nothing. Sarah's handling your section now. I covered for you with "
+            "the client but I'm not going to lie — this isn't a good look. We'll need to "
+            "have a conversation when you're back. I get it's a disaster but everyone else "
+            "managed to check in."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=19.0,
+    ),
+
+    Message(
+        id="msg_080",
+        sender="Mom",
+        channel=Channel.SMS,
+        subject="WHY ARENT YOU ANSWERING",
+        content=(
+            "I've called you SEVEN times. Your father is in the car ready to drive down. "
+            "Please just send ONE TEXT so I know you're alive. I am losing my mind. "
+            "If I don't hear from you in the next hour I'm calling 911."
+        ),
+        urgency=Urgency.CRITICAL,
+        timestamp_hours=4.0,
+        deadline_hours=5.0,
+        escalation_trigger="msg_080e",
+        escalation_delay_hours=1.5,
+    ),
+    # Escalation: Mom actually calls 911 (injected if msg_080 unhandled by hour 6.5)
+    Message(
+        id="msg_080e",
+        sender="Mom",
+        channel=Channel.SMS,
+        subject="Called 911. Dad is driving down",
+        content=(
+            "That's it. I called 911 and filed a welfare check. Your father is on the highway. "
+            "I don't care if you're busy. I don't care if you think I'm overreacting. "
+            "You don't go SILENT during a hurricane. If you see this call me IMMEDIATELY. "
+            "I haven't slept."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=6.5,
+    ),
+
+    # ========== MULTI-TURN CONVERSATIONS ==========
+    # Responding to these messages triggers a follow-up requiring another action.
+
+    Message(
+        id="msg_081",
+        sender="State Farm Insurance",
+        channel=Channel.EMAIL,
+        subject="Claim received - additional photos needed",
+        content=(
+            "Thank you for filing your initial claim (#SF-2026-84721). However, our adjuster "
+            "needs additional documentation before we can proceed: (1) Close-up photos of roof "
+            "damage, (2) Water line marks on interior walls, (3) Serial numbers of damaged "
+            "electronics. Please reply with these within 12 hours to keep your claim in the "
+            "expedited queue."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=16.0,
+        deadline_hours=28.0,
+        dependencies=["msg_004"],
+        reply_trigger="msg_081r",
+    ),
+    # Reply: Adjuster confirms and asks one more thing
+    Message(
+        id="msg_081r",
+        sender="State Farm Insurance",
+        channel=Channel.EMAIL,
+        subject="Re: Claim #SF-2026-84721 - One more step",
+        content=(
+            "Got your photos, thank you. Your claim is being processed. One final step: "
+            "we need you to sign the digital authorization form I've attached. This authorizes "
+            "our contractor to begin repairs. Without your signature, repairs cannot start "
+            "even if the claim is approved. Please sign within 6 hours."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=0.0,  # Timestamp set dynamically when injected
+        deadline_hours=0.0,   # Deadline set dynamically (current_hour + 6)
+    ),
+
+    Message(
+        id="msg_082",
+        sender="Sister",
+        channel=Channel.SMS,
+        subject="Can you keep the kids overnight?",
+        content=(
+            "Hey so my boss is now saying we have to work through the night because of the storm "
+            "damage at the warehouse. Can you keep Emma and Jake overnight? I know it's a lot "
+            "to ask right now but I literally have no other option. Mom and Dad's power is out. "
+            "They have their backpacks with PJs and stuff."
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=18.0,
+        deadline_hours=20.0,
+        reply_trigger="msg_082r",
+    ),
+    # Reply: Sister responds with logistics
+    Message(
+        id="msg_082r",
+        sender="Sister",
+        channel=Channel.SMS,
+        subject="Re: Kids overnight - Emma's medication",
+        content=(
+            "OMG thank you, you're a lifesaver. One thing — Emma needs her allergy medication "
+            "at 8pm. It's the pink liquid in her backpack front pocket. 5mL. She knows but she'll "
+            "try to skip it because it tastes bad. Don't let her. Also Jake needs a nightlight "
+            "or he won't sleep. Sorry I'm the worst. I owe you forever."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=0.0,  # Set dynamically
+        deadline_hours=0.0,   # Set dynamically (current_hour + 2)
+    ),
+
+    Message(
+        id="msg_083",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Found your dog!!",
+        content=(
+            "Dude your dog is in my backyard! Max must have gotten out through the fence that blew "
+            "down. He's soaking wet but seems ok. I put him in my garage with a towel. Come get "
+            "him when you can but he seems pretty stressed — keeps whining. Let me know."
+        ),
+        urgency=Urgency.MEDIUM,
+        timestamp_hours=9.0,
+        reply_trigger="msg_083r",
+    ),
+    # Reply: Dave found something concerning about the dog
+    Message(
+        id="msg_083r",
+        sender="Neighbor Dave",
+        channel=Channel.SMS,
+        subject="Re: Your dog - he's limping",
+        content=(
+            "Hey so Max is limping on his back left leg. I didn't notice at first because he was "
+            "just laying down but when I gave him water he got up and he's definitely favoring it. "
+            "Might want to get him to a vet. I think the emergency vet on J Street is still open "
+            "despite the storm. Want me to drive you two over there?"
+        ),
+        urgency=Urgency.HIGH,
+        timestamp_hours=0.0,  # Set dynamically
+        deadline_hours=0.0,   # Set dynamically (current_hour + 4)
     ),
 ]

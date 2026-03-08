@@ -212,3 +212,9 @@ __marimo__/
 # Training data
 .episodes.json
 .sample_episodes.json
+
+# macOS
+.DS_Store
+
+# Training outputs
+outputs/

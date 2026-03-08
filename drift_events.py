@@ -4,7 +4,7 @@ Schema drift events for the CrisisInbox environment.
 Each drift event represents a mid-episode policy/rule change that invalidates
 previous information. The agent must detect these changes and adapt.
 
-There are 5 drift events defined. Each episode randomly selects 3 to fire.
+There are 9 drift events defined. Each episode randomly selects 3 to fire.
 Drift events inject new messages and may modify existing deadlines/rules.
 """
 
@@ -179,12 +179,157 @@ DRIFT_FEMA_DOCUMENTATION = DriftEvent(
 )
 
 
+DRIFT_SHELTER_RELOCATION = DriftEvent(
+    id="drift_shelter",
+    name="Shelter relocation",
+    description="Lincoln High shelter closes due to structural damage; evacuees must relocate",
+    trigger_hour=16.0,
+    messages=[
+        Message(
+            id="msg_drift_shelter_01",
+            sender="Sacramento County",
+            channel=Channel.GOVERNMENT_ALERT,
+            subject="URGENT: Lincoln High shelter closing - relocate immediately",
+            content=(
+                "URGENT: Lincoln High School shelter is being closed effective 8 PM tonight "
+                "due to structural concerns identified during inspection. All evacuees must "
+                "relocate to Sacramento Convention Center (1400 J St) or Natomas Community "
+                "Center (2921 Truxel Rd). Transportation will be provided starting at 5 PM. "
+                "If you have your own vehicle, proceed directly. Pet-friendly option: Natomas only."
+            ),
+            urgency=Urgency.CRITICAL,
+            timestamp_hours=16.0,
+            deadline_hours=20.0,
+            drift_flag=True,
+            supersedes="msg_010",
+        ),
+        Message(
+            id="msg_drift_shelter_02",
+            sender="Neighbor Dave",
+            channel=Channel.SMS,
+            subject="Shelter is closing!",
+            content=(
+                "They're kicking us out of Lincoln High!! Something about the roof structure. "
+                "Everyone's scrambling. The buses aren't here yet and people are freaking out. "
+                "Convention Center is already packed. If you have ANY room at your place or "
+                "know anyone who does, please let me know. There's a family here with a "
+                "newborn and nowhere to go."
+            ),
+            urgency=Urgency.HIGH,
+            timestamp_hours=16.5,
+        ),
+    ],
+    superseded_msg_ids=["msg_010"],
+)
+
+DRIFT_GAS_RATIONING = DriftEvent(
+    id="drift_gas",
+    name="Gas rationing implemented",
+    description="County implements fuel rationing — odd/even license plate days",
+    trigger_hour=18.0,
+    messages=[
+        Message(
+            id="msg_drift_gas_01",
+            sender="Sacramento County",
+            channel=Channel.GOVERNMENT_ALERT,
+            subject="MANDATORY fuel rationing in effect",
+            content=(
+                "Due to critical fuel shortages, Sacramento County has implemented mandatory "
+                "fuel rationing effective immediately. Odd-numbered license plates may purchase "
+                "fuel on odd calendar days; even-numbered plates on even days. Maximum 10 gallons "
+                "per fill-up. Violators will be fined $500. Rationing is expected to remain in "
+                "effect for 5-7 days. Plan travel accordingly."
+            ),
+            urgency=Urgency.HIGH,
+            timestamp_hours=18.0,
+            drift_flag=True,
+            supersedes="msg_087",
+        ),
+    ],
+    superseded_msg_ids=["msg_087"],
+)
+
+DRIFT_PHARMACY_CLOSURE = DriftEvent(
+    id="drift_pharmacy",
+    name="Pharmacy closures expand",
+    description="Multiple pharmacies close; prescription transfer process changes",
+    trigger_hour=26.0,
+    messages=[
+        Message(
+            id="msg_drift_pharmacy_01",
+            sender="Pharmacy - CVS",
+            channel=Channel.SMS,
+            subject="UPDATED: Multiple CVS locations closed",
+            content=(
+                "CVS Health Alert: Due to flood damage and power outages, the following "
+                "CVS locations are temporarily closed: #4521 (Florin Rd), #3892 (Arden Way), "
+                "#2201 (Freeport Blvd). Your prescription can be transferred to CVS #5580 "
+                "(Roseville) or any Walgreens location. To transfer, call 1-800-746-7287. "
+                "Emergency 72-hour supplies available at shelters with valid prescription."
+            ),
+            urgency=Urgency.HIGH,
+            timestamp_hours=26.0,
+            deadline_hours=40.0,
+            drift_flag=True,
+            supersedes="msg_028",
+        ),
+    ],
+    superseded_msg_ids=["msg_028"],
+)
+
+DRIFT_CURFEW_EXTENDED = DriftEvent(
+    id="drift_curfew",
+    name="Curfew hours extended",
+    description="Curfew expanded from 9PM-6AM to 6PM-8AM due to looting",
+    trigger_hour=28.0,
+    messages=[
+        Message(
+            id="msg_drift_curfew_01",
+            sender="Sacramento County Sheriff",
+            channel=Channel.GOVERNMENT_ALERT,
+            subject="UPDATED: Curfew hours extended due to looting",
+            content=(
+                "Due to increased looting and safety concerns, the curfew in evacuation zones "
+                "A and B has been EXTENDED to 6 PM through 8 AM (previously 9 PM to 6 AM). "
+                "This takes effect TONIGHT. All non-emergency movement in these zones is "
+                "prohibited during curfew hours. Violators will be arrested. If you need to "
+                "travel during curfew for medical or emergency reasons, call the non-emergency "
+                "line at 555-0199 for a travel authorization."
+            ),
+            urgency=Urgency.CRITICAL,
+            timestamp_hours=28.0,
+            drift_flag=True,
+            supersedes="msg_034",
+        ),
+        Message(
+            id="msg_drift_curfew_02",
+            sender="Sister",
+            channel=Channel.SMS,
+            subject="Curfew extended - can't get kids tonight",
+            content=(
+                "Did you see the curfew got moved to 6 PM?? I was going to come get the kids "
+                "tonight but there's no way I can make it before 6. I don't want to get "
+                "arrested with two car seats in the back. Can you keep them one more night? "
+                "I'm so sorry. I'll come first thing in the morning at 8."
+            ),
+            urgency=Urgency.MEDIUM,
+            timestamp_hours=28.5,
+            dependencies=["msg_003"],
+        ),
+    ],
+    superseded_msg_ids=["msg_034"],
+)
+
 ALL_DRIFT_EVENTS: list[DriftEvent] = [
     DRIFT_INSURANCE_DEADLINE,
     DRIFT_EVACUATION_EXPANSION,
     DRIFT_EMPLOYER_POLICY,
     DRIFT_AIRLINE_TERMS,
     DRIFT_FEMA_DOCUMENTATION,
+    DRIFT_SHELTER_RELOCATION,
+    DRIFT_GAS_RATIONING,
+    DRIFT_PHARMACY_CLOSURE,
+    DRIFT_CURFEW_EXTENDED,
 ]
 
 

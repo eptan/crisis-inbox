@@ -66,3 +66,19 @@ class Message(BaseModel):
         default=None,
         description="ID of a previous message this one replaces (due to drift)",
     )
+    conflicts_with: Optional[str] = Field(
+        default=None,
+        description="ID of another message with an overlapping deadline — only one can be handled",
+    )
+    escalation_trigger: Optional[str] = Field(
+        default=None,
+        description="ID of a follow-up message that appears if THIS message is not handled in time",
+    )
+    escalation_delay_hours: Optional[float] = Field(
+        default=None,
+        description="Hours after this message's deadline before the escalation fires",
+    )
+    reply_trigger: Optional[str] = Field(
+        default=None,
+        description="ID of a follow-up message injected when THIS message is handled (multi-turn)",
+    )

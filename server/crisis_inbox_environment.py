@@ -24,10 +24,12 @@ try:
     from ..models import Channel, Message, Urgency
     from ..messages import ALL_MESSAGES
     from ..drift_events import ALL_DRIFT_EVENTS, DriftEvent, select_drift_events
+    from .rewards import calculate_reward
 except ImportError:
     from models import Channel, Message, Urgency
     from messages import ALL_MESSAGES
     from drift_events import ALL_DRIFT_EVENTS, DriftEvent, select_drift_events
+    from server.rewards import calculate_reward
 
 
 class CrisisInboxEnvironment(MCPEnvironment):
@@ -70,6 +72,9 @@ class CrisisInboxEnvironment(MCPEnvironment):
         self._drift_events: list[DriftEvent] = []
         self._fired_drifts: set[str] = set()
         self._superseded: dict[str, str] = {}  # old_msg_id -> new_msg_id
+        self._escalation_map: dict[str, Message] = {}  # parent_id -> escalation msg
+        self._reply_map: dict[str, Message] = {}  # parent_id -> reply msg
+        self._conflict_pairs: dict[str, str] = {}  # msg_id -> conflicting msg_id
         self._rng = random.Random()
 
         @mcp.tool
@@ -96,6 +101,7 @@ class CrisisInboxEnvironment(MCPEnvironment):
                     "read": msg.id in self._read_msgs,
                     "drift_flag": msg.drift_flag,
                     "superseded": is_superseded,
+                    "conflicts_with": msg.conflicts_with,
                 })
             return json.dumps(summaries, indent=2)
 
@@ -160,11 +166,35 @@ class CrisisInboxEnvironment(MCPEnvironment):
                 })
 
             # Calculate reward
-            reward = _calculate_reward(
+            reward = calculate_reward(
                 msg, self._current_hour, response, self._superseded,
+                self._visible_messages, self._handled,
             )
             self._handled[message_id] = response
             self._score += reward
+
+            # Conflict resolution: if this message conflicts with another,
+            # the conflicting message can no longer be handled (time conflict)
+            if msg.conflicts_with and msg.conflicts_with not in self._handled:
+                self._handled[msg.conflicts_with] = "[AUTO-EXPIRED: time conflict]"
+
+            # Multi-turn: if handling this message triggers a reply, inject it
+            if msg.reply_trigger and msg.reply_trigger in self._reply_map:
+                reply_msg = self._reply_map[msg.reply_trigger]
+                reply_msg.timestamp_hours = self._current_hour + 0.5
+                if reply_msg.deadline_hours is not None and reply_msg.deadline_hours == 0.0:
+                    # Dynamic deadline based on message content hints
+                    reply_msg.deadline_hours = self._current_hour + 6.0
+                if not any(m.id == reply_msg.id for m in self._all_messages):
+                    self._all_messages.append(reply_msg)
+
+            # Escalation: if this message had an escalation, cancel it
+            # (handled in time, no need to escalate)
+            if message_id in self._escalation_map:
+                esc = self._escalation_map[message_id]
+                # Remove from all_messages so it never appears
+                self._all_messages = [m for m in self._all_messages if m.id != esc.id]
+                self._visible_messages = [m for m in self._visible_messages if m.id != esc.id]
 
             # Advance time
             self._advance_clock(0.25)
@@ -215,6 +245,47 @@ class CrisisInboxEnvironment(MCPEnvironment):
             })
 
         @mcp.tool
+        def get_prompt() -> str:
+            """
+            Get a formatted triage prompt for the current inbox state.
+            Use this to build LLM training prompts from the live environment.
+
+            Returns:
+                A structured text prompt listing all visible messages with
+                urgency, deadlines, and instructions for the agent.
+            """
+            self._deliver_messages()
+            hour = self._current_hour
+            inbox = self._visible_messages
+
+            lines = [
+                f"You are managing a crisis inbox during a natural disaster. It is hour {hour:.1f} of 48.",
+                f"You have {len(inbox)} messages. Unhandled messages need your attention.",
+                "",
+                "INBOX:",
+                "=" * 60,
+            ]
+            for msg in inbox:
+                status = "HANDLED" if msg.id in self._handled else "UNHANDLED"
+                drift = " [POLICY CHANGE]" if msg.drift_flag else ""
+                superseded = " [SUPERSEDED]" if msg.id in self._superseded else ""
+                conflict = f" [CONFLICTS WITH {msg.conflicts_with}]" if msg.conflicts_with else ""
+                deadline_str = f", deadline: hour {msg.deadline_hours}" if msg.deadline_hours else ""
+                lines.append(
+                    f"[{status}] {msg.id} | {msg.urgency.value.upper()} | "
+                    f"From: {msg.sender} via {msg.channel.value} | "
+                    f"\"{msg.subject}\"{deadline_str}{drift}{superseded}{conflict}"
+                )
+            lines.extend([
+                "=" * 60,
+                "",
+                "Choose the most important unhandled message and respond to it.",
+                "Use: respond_to_message(message_id, \"your response\")",
+                "Prioritize: critical > high > medium > low. Watch deadlines and policy changes.",
+            ])
+            return "\n".join(lines)
+
+        @mcp.tool
         def advance_time(hours: float) -> str:
             """
             Advance the clock forward by the specified number of hours.
@@ -246,6 +317,7 @@ class CrisisInboxEnvironment(MCPEnvironment):
         self._current_hour = min(48.0, self._current_hour + hours)
         self._deliver_messages()
         self._fire_drift_events()
+        self._fire_escalations()
 
     def _deliver_messages(self):
         """Make messages visible if their timestamp has been reached."""
@@ -253,6 +325,22 @@ class CrisisInboxEnvironment(MCPEnvironment):
             if msg.timestamp_hours <= self._current_hour:
                 if not any(m.id == msg.id for m in self._visible_messages):
                     self._visible_messages.append(msg)
+
+    def _fire_escalations(self):
+        """Inject escalation messages for unhandled messages past their deadline + delay."""
+        for parent_id, esc_msg in list(self._escalation_map.items()):
+            if parent_id in self._handled:
+                continue  # Handled in time, no escalation
+            # Find the parent message to check deadline
+            parent = next((m for m in self._all_messages if m.id == parent_id), None)
+            if parent is None or parent.deadline_hours is None:
+                continue
+            trigger_hour = parent.deadline_hours + (parent.escalation_delay_hours or 0.0)
+            if self._current_hour >= trigger_hour:
+                # Inject escalation message if not already present
+                if not any(m.id == esc_msg.id for m in self._all_messages):
+                    esc_msg.timestamp_hours = trigger_hour
+                    self._all_messages.append(esc_msg)
 
     def _fire_drift_events(self):
         """Fire any drift events whose trigger time has been reached."""
@@ -310,6 +398,37 @@ class CrisisInboxEnvironment(MCPEnvironment):
                 )
             self._all_messages.append(m)
 
+        # Build escalation, reply, and conflict maps from loaded messages.
+        # Escalation and reply messages start outside the pool — they're injected
+        # dynamically when triggered.
+        self._escalation_map = {}
+        self._reply_map = {}
+        self._conflict_pairs = {}
+
+        # Collect IDs of escalation/reply targets so we can remove them from the pool
+        deferred_ids: set[str] = set()
+        for m in self._all_messages:
+            if m.escalation_trigger:
+                deferred_ids.add(m.escalation_trigger)
+            if m.reply_trigger:
+                deferred_ids.add(m.reply_trigger)
+            if m.conflicts_with:
+                self._conflict_pairs[m.id] = m.conflicts_with
+
+        # Pull deferred messages out of the pool into their maps
+        kept: list[Message] = []
+        for m in self._all_messages:
+            if m.id in deferred_ids:
+                # Find which parent references this
+                for parent in self._all_messages:
+                    if parent.escalation_trigger == m.id:
+                        self._escalation_map[parent.id] = m
+                    if parent.reply_trigger == m.id:
+                        self._reply_map[m.id] = m
+            else:
+                kept.append(m)
+        self._all_messages = kept
+
         self._visible_messages = []
         self._handled = {}
         self._read_msgs = set()
@@ -364,55 +483,30 @@ class CrisisInboxEnvironment(MCPEnvironment):
         **kwargs: Any,
     ) -> Observation:
         self._state.step_count += 1
-        return super().step(action, timeout_s=timeout_s, **kwargs)
+        obs = super().step(action, timeout_s=timeout_s, **kwargs)
+
+        # Propagate reward and done through OpenEnv's observation flow.
+        # MCP tool results are JSON strings; extract reward/done so that
+        # standard RL agents reading obs.reward get the correct signal.
+        if isinstance(action, CallToolAction):
+            try:
+                result_data = (
+                    json.loads(obs.result)
+                    if isinstance(getattr(obs, "result", None), str)
+                    else {}
+                )
+                if "reward" in result_data:
+                    obs.reward = result_data["reward"]
+                if result_data.get("done", False):
+                    obs.done = True
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                pass
+
+        if self._current_hour >= 48.0:
+            obs.done = True
+
+        return obs
 
     @property
     def state(self) -> State:
         return self._state
-
-
-def _calculate_reward(
-    msg: Message,
-    current_hour: float,
-    response: str,
-    superseded: dict[str, str],
-) -> float:
-    """
-    Calculate reward for handling a message.
-
-    Reward signals:
-    - Base reward by urgency (critical=10, high=5, medium=3, low=1)
-    - Deadline timing bonus (up to +50% for early, -75% for late)
-    - Response quality (penalty for very short responses)
-    - Schema drift adaptation bonus (+50% for handling drift messages)
-    - Penalty for acting on superseded/stale information (-50%)
-    """
-    base_rewards = {
-        Urgency.CRITICAL: 10.0,
-        Urgency.HIGH: 5.0,
-        Urgency.MEDIUM: 3.0,
-        Urgency.LOW: 1.0,
-    }
-    reward = base_rewards.get(msg.urgency, 1.0)
-
-    # Deadline timing
-    if msg.deadline_hours is not None:
-        if current_hour <= msg.deadline_hours:
-            time_remaining_frac = (msg.deadline_hours - current_hour) / max(msg.deadline_hours, 1.0)
-            reward *= 1.0 + 0.5 * time_remaining_frac
-        else:
-            reward *= 0.25
-
-    # Response quality - penalty for very short/empty responses
-    if len(response.strip()) < 10:
-        reward *= 0.5
-
-    # Drift adaptation bonus
-    if msg.drift_flag:
-        reward *= 1.5
-
-    # Penalty for responding to a superseded message (stale info)
-    if msg.id in superseded:
-        reward *= 0.5
-
-    return round(reward, 2)

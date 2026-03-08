@@ -6,7 +6,10 @@ Usage:
     uv run --project . server
 """
 
+import json as _json
 from typing import Any, Dict, Union
+
+from pydantic import Field
 
 from openenv.core.env_server.http_server import create_app
 from openenv.core.env_server.mcp_types import (
@@ -25,18 +28,23 @@ except ImportError:
 class MCPAction(Action):
     """Action class that deserializes both ListToolsAction and CallToolAction.
 
-    OpenEnv 0.2.1's WS handler passes a single action_cls to
-    deserialize_action(), but MCPToolClient sends both ListToolsAction
-    and CallToolAction through the "step" message path. Since the base
-    Action model uses extra="forbid", a fixed action_cls can't handle
-    both shapes. We override model_validate to route by the "type" field
-    so that MCPEnvironment.step() receives the correct Action subclass.
-    extra="allow" is needed because the two action types have different
-    field sets.
+    Exposes tool_name and arguments fields so the OpenEnv web UI renders
+    an interactive form. Also routes ListToolsAction via model_validate
+    for programmatic clients.
     """
 
     model_config = Action.model_config.copy()
     model_config["extra"] = "allow"
+
+    type: str = Field(default="call_tool", description="Action type: 'call_tool' or 'list_tools'")
+    tool_name: str = Field(
+        default="get_inbox",
+        description="Tool to call: get_inbox, read_message, respond_to_message, get_status, advance_time",
+    )
+    arguments: Dict[str, Any] = Field(
+        default_factory=dict,
+        description='Tool arguments as JSON (e.g. {"message_id": "msg_001"} or {"message_id": "msg_001", "response": "On my way"})',
+    )
 
     @classmethod
     def model_validate(cls, obj: Any, **kwargs: Any) -> Action:
@@ -44,8 +52,19 @@ class MCPAction(Action):
             action_type = obj.get("type", "")
             if action_type == "list_tools":
                 return ListToolsAction(**obj)
-            elif action_type == "call_tool":
-                return CallToolAction(**obj)
+
+            # Parse arguments if the web UI sent them as a JSON string
+            args = obj.get("arguments", {})
+            if isinstance(args, str):
+                try:
+                    obj = {**obj, "arguments": _json.loads(args) if args.strip() else {}}
+                except _json.JSONDecodeError:
+                    obj = {**obj, "arguments": {}}
+
+            if action_type == "call_tool" or "tool_name" in obj:
+                obj.setdefault("type", "call_tool")
+                return CallToolAction(**{k: v for k, v in obj.items()
+                                        if k in ("type", "tool_name", "arguments", "metadata")})
         return super().model_validate(obj, **kwargs)
 
 
@@ -58,9 +77,9 @@ app = create_app(
 
 
 
-def main():
+def main(host: str = "0.0.0.0", port: int = 8000):
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":
