@@ -1,0 +1,26 @@
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+
+WORKDIR /app
+
+# Install Jupyter + training deps
+RUN pip install --no-cache-dir \
+    jupyter \
+    unsloth \
+    trl \
+    transformers \
+    datasets \
+    accelerate \
+    peft \
+    huggingface_hub
+
+# Copy everything needed for training
+COPY episodes.json .
+COPY generate_episodes.py .
+COPY models.py .
+COPY messages.py .
+COPY drift_events.py .
+COPY notebooks/ ./notebooks/
+
+EXPOSE 8888
+
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
