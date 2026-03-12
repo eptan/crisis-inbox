@@ -12,10 +12,13 @@ Features:
 """
 
 import json
+import logging
 import random
 import re
 from typing import Any, Optional
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 from pydantic import BaseModel, Field
 
@@ -33,6 +36,34 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+EPISODE_DURATION_HOURS = 48.0
+READ_TIME_COST_HOURS = 0.1
+RESPOND_TIME_COST_HOURS = 0.25
+ADVANCE_TIME_MIN_HOURS = 0.5
+ADVANCE_TIME_MAX_HOURS = 4.0
+DRIFT_EVENTS_PER_EPISODE = 3
+TIMESTAMP_JITTER_FRACTION = 0.15
+DEADLINE_JITTER_FRACTION = 0.10
+
+# Reward multipliers
+DEADLINE_EARLY_BONUS_MAX = 0.5       # Up to 50% bonus for early response
+DEADLINE_MISSED_PENALTY = 0.25       # 75% penalty for late response
+SHORT_RESPONSE_PENALTY = 0.5         # 50% penalty for <10 char responses
+SHORT_RESPONSE_THRESHOLD = 10        # Minimum response length (characters)
+DRIFT_FLAG_BONUS = 1.5               # 50% bonus for handling drift messages
+SUPERSEDED_PENALTY = 0.5             # 50% penalty for acting on stale info
+CONFLICT_BONUS = 1.25                # 25% bonus for resolving conflicts
+PRIORITY_PENALTY = 0.3               # 70% penalty for low over critical
+TONE_FAMILY_STRONG = 1.15            # Tone bonus: 2+ warm words, family
+TONE_FAMILY_WEAK = 1.07              # Tone bonus: 1 warm word, family
+TONE_FORMAL_STRONG = 1.1             # Tone bonus: 2+ formal words
+TONE_FORMAL_WEAK = 1.05              # Tone bonus: 1 formal word
+UPCOMING_DEADLINE_WINDOW_HOURS = 4.0  # Hours before deadline to flag as "upcoming"
+
+# ---------------------------------------------------------------------------
 # Reward functions (inlined — single source of truth for server + notebooks)
 # ---------------------------------------------------------------------------
 
@@ -48,15 +79,15 @@ def tone_multiplier(sender: str, response: str) -> float:
     if any(f in sender_lower for f in _FAMILY_SENDERS):
         matches = sum(1 for w in _FAMILY_TONE_WORDS if w in resp_lower)
         if matches >= 2:
-            return 1.15
+            return TONE_FAMILY_STRONG
         elif matches == 1:
-            return 1.07
+            return TONE_FAMILY_WEAK
     else:
         matches = sum(1 for w in _FORMAL_TONE_WORDS if w in resp_lower)
         if matches >= 2:
-            return 1.1
+            return TONE_FORMAL_STRONG
         elif matches == 1:
-            return 1.05
+            return TONE_FORMAL_WEAK
     return 1.0
 
 
@@ -85,23 +116,23 @@ def calculate_reward(
     if msg.deadline_hours is not None:
         if current_hour <= msg.deadline_hours:
             time_remaining_frac = (msg.deadline_hours - current_hour) / max(msg.deadline_hours, 1.0)
-            reward *= 1.0 + 0.5 * time_remaining_frac
+            reward *= 1.0 + DEADLINE_EARLY_BONUS_MAX * time_remaining_frac
         else:
-            reward *= 0.25
+            reward *= DEADLINE_MISSED_PENALTY
 
-    if len(response.strip()) < 10:
-        reward *= 0.5
+    if len(response.strip()) < SHORT_RESPONSE_THRESHOLD:
+        reward *= SHORT_RESPONSE_PENALTY
 
     reward *= tone_multiplier(msg.sender, response)
 
     if msg.drift_flag:
-        reward *= 1.5
+        reward *= DRIFT_FLAG_BONUS
 
     if msg.id in superseded:
-        reward *= 0.5
+        reward *= SUPERSEDED_PENALTY
 
     if msg.conflicts_with:
-        reward *= 1.25
+        reward *= CONFLICT_BONUS
 
     if visible_messages and handled is not None:
         has_unhandled_critical = any(
@@ -110,7 +141,7 @@ def calculate_reward(
             if m.id != msg.id
         )
         if has_unhandled_critical and msg.urgency in (Urgency.LOW, Urgency.MEDIUM):
-            reward *= 0.3
+            reward *= PRIORITY_PENALTY
 
     return round(reward, 2)
 
@@ -298,7 +329,7 @@ class CrisisInboxEnvironment(Environment):
         for msg in self._visible_messages:
             if msg.id == message_id:
                 self._read_msgs.add(message_id)
-                self._advance_clock(0.1)
+                self._advance_clock(READ_TIME_COST_HOURS)
                 result = msg.model_dump(exclude={"drift_flag"})
                 result["current_hour"] = self._current_hour
                 if msg.id in self._superseded:
@@ -335,6 +366,10 @@ class CrisisInboxEnvironment(Environment):
         )
         self._handled[message_id] = response
         self._score += reward
+        logger.debug(
+            "Handled %s (urgency=%s, reward=%.2f, total=%.2f, hour=%.1f)",
+            message_id, msg.urgency.value, reward, self._score, self._current_hour,
+        )
 
         if msg.conflicts_with and msg.conflicts_with not in self._handled:
             self._handled[msg.conflicts_with] = "[AUTO-EXPIRED: time conflict]"
@@ -352,8 +387,8 @@ class CrisisInboxEnvironment(Environment):
             self._all_messages = [m for m in self._all_messages if m.id != esc.id]
             self._visible_messages = [m for m in self._visible_messages if m.id != esc.id]
 
-        self._advance_clock(0.25)
-        done = self._current_hour >= 48.0
+        self._advance_clock(RESPOND_TIME_COST_HOURS)
+        done = self._current_hour >= EPISODE_DURATION_HOURS
 
         return {
             "status": "handled",
@@ -375,7 +410,7 @@ class CrisisInboxEnvironment(Environment):
             if msg.id not in self._handled and msg.deadline_hours is not None:
                 if self._current_hour > msg.deadline_hours:
                     expired.append({"id": msg.id, "subject": msg.subject})
-                elif msg.deadline_hours - self._current_hour < 4.0:
+                elif msg.deadline_hours - self._current_hour < UPCOMING_DEADLINE_WINDOW_HOURS:
                     upcoming_deadlines.append({
                         "id": msg.id,
                         "subject": msg.subject,
@@ -391,7 +426,7 @@ class CrisisInboxEnvironment(Environment):
             "expired_deadlines": expired,
             "upcoming_deadlines": upcoming_deadlines,
             "drift_events_fired": len(self._fired_drifts),
-            "done": self._current_hour >= 48.0,
+            "done": self._current_hour >= EPISODE_DURATION_HOURS,
         }
 
     def get_prompt(self) -> str:
@@ -433,7 +468,7 @@ class CrisisInboxEnvironment(Environment):
 
     def advance_time(self, hours: float) -> dict:
         """Advance the clock forward by the specified number of hours."""
-        hours = max(0.5, min(4.0, hours))
+        hours = max(ADVANCE_TIME_MIN_HOURS, min(ADVANCE_TIME_MAX_HOURS, hours))
         old_visible_count = len(self._visible_messages)
         self._advance_clock(hours)
         new_visible_count = len(self._visible_messages)
@@ -443,7 +478,7 @@ class CrisisInboxEnvironment(Environment):
             "current_hour": self._current_hour,
             "new_messages": new_visible_count - old_visible_count,
             "total_visible": new_visible_count,
-            "done": self._current_hour >= 48.0,
+            "done": self._current_hour >= EPISODE_DURATION_HOURS,
         }
 
     def score_batch(self, completions: list[str], prompt_data: dict) -> dict:
@@ -470,7 +505,7 @@ class CrisisInboxEnvironment(Environment):
 
     def _advance_clock(self, hours: float):
         """Advance the clock and deliver any new messages/drift events."""
-        self._current_hour = min(48.0, self._current_hour + hours)
+        self._current_hour = min(EPISODE_DURATION_HOURS, self._current_hour + hours)
         self._deliver_messages()
         self._fire_drift_events()
         self._fire_escalations()
@@ -505,6 +540,7 @@ class CrisisInboxEnvironment(Environment):
                 continue
             if self._current_hour >= drift.trigger_hour:
                 self._fired_drifts.add(drift.id)
+                logger.info("Drift event fired: %s at hour %.1f", drift.name, self._current_hour)
                 # Add drift messages to the message pool
                 for msg in drift.messages:
                     if not any(m.id == msg.id for m in self._all_messages):
@@ -530,7 +566,7 @@ class CrisisInboxEnvironment(Environment):
 
         # Build the message pool: start with non-drift messages
         drift_msg_ids = set()
-        self._drift_events = select_drift_events(count=3, rng=self._rng)
+        self._drift_events = select_drift_events(count=DRIFT_EVENTS_PER_EPISODE, rng=self._rng)
         for drift in self._drift_events:
             for msg in drift.messages:
                 drift_msg_ids.add(msg.id)
@@ -546,10 +582,10 @@ class CrisisInboxEnvironment(Environment):
                 continue
             m = msg.model_copy()
             if m.timestamp_hours > 0:
-                jitter = self._rng.uniform(-0.15, 0.15) * m.timestamp_hours
+                jitter = self._rng.uniform(-TIMESTAMP_JITTER_FRACTION, TIMESTAMP_JITTER_FRACTION) * m.timestamp_hours
                 m.timestamp_hours = max(0.1, min(47.5, m.timestamp_hours + jitter))
             if m.deadline_hours is not None and m.deadline_hours > 0:
-                d_jitter = self._rng.uniform(-0.1, 0.1) * m.deadline_hours
+                d_jitter = self._rng.uniform(-DEADLINE_JITTER_FRACTION, DEADLINE_JITTER_FRACTION) * m.deadline_hours
                 m.deadline_hours = max(
                     m.timestamp_hours + 0.5,
                     min(72.0, m.deadline_hours + d_jitter),
@@ -595,6 +631,11 @@ class CrisisInboxEnvironment(Environment):
         )
 
         self._deliver_messages()
+
+        logger.info(
+            "Episode reset: seed=%s, messages=%d, drift_events=%d",
+            seed, len(self._all_messages), len(self._drift_events),
+        )
 
         return CrisisInboxObservation(
             done=False,
@@ -644,7 +685,7 @@ class CrisisInboxEnvironment(Environment):
 
         # Extract reward/done from respond_to_message results
         reward = 0.0
-        done = self._current_hour >= 48.0
+        done = self._current_hour >= EPISODE_DURATION_HOURS
         if isinstance(result, dict):
             reward = result.get("reward", 0.0)
             done = done or result.get("done", False)

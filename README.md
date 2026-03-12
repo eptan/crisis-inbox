@@ -10,6 +10,8 @@ pinned: false
 
 # CrisisInbox
 
+> Built in 48 hours at the [OpenEnv Hackathon](https://github.com/OpenEnvs/OpenEnv) @ Shack15, San Francisco (March 7-8, 2026)
+
 A reinforcement learning environment built on [OpenEnv 0.2.1](https://github.com/OpenEnvs/OpenEnv) for training language models to manage personal task overload during natural disasters.
 
 **Problem Statement 3.2** (Personalized Tasks) + **Patronus AI Sub-Theme** (Schema Drift)
@@ -200,6 +202,9 @@ crisis-inbox/
 │   ├── app.py                          # FastAPI app entry point
 │   ├── demo_ui.py                      # HTML scenario overview at /demo
 │   └── Dockerfile                      # HF Spaces deployment
+├── tests/
+│   ├── test_rewards.py                 # Unit tests for reward functions
+│   └── test_environment.py             # Integration tests for environment lifecycle
 ├── notebooks/
 │   └── crisisinbox_grpo_northflank.ipynb  # GRPO training (Unsloth LoRA)
 ├── pyproject.toml                      # Package config
@@ -207,6 +212,15 @@ crisis-inbox/
 ├── requirements.txt                    # Docker build dependencies
 └── demo.py                            # Interactive demo script
 ```
+
+## Testing
+
+```bash
+pip install -e ".[dev]"
+pytest tests/ -v
+```
+
+57 tests covering reward functions (tone multiplier, urgency base, deadline timing, drift bonuses, conflict handling, priority penalties), format scoring, and environment lifecycle (reset, message delivery, time advancement, drift events, dependencies, conflicts, and the OpenEnv step interface).
 
 ## Stack
 
